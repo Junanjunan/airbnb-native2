@@ -12,7 +12,15 @@
         경로변경: cd airbnb-native
 
     github 저장:
-        git remote add https://github.com/Junanjunan/airbnb-native
+        git remote add origin https://github.com/Junanjunan/airbnb-native2
+
+    * github 매뉴얼 다시 참조
+        git init
+        git add README.md
+        git commit -m "first commit"
+        git branch -M main
+        git remote add origin https://github.com/Junanjunan/airbnb-native2
+        git push -u origin main
 
     다음 설명은 airbnb-native 폴더에..?
 
@@ -26,6 +34,7 @@
             그러면 컴퓨터와 핸드폰이 연동된다.
 
 
+
 # 6.2 Preloading Images
     
     * 전체적인 설명은 docs.expo.io 에서 가져옴
@@ -33,6 +42,7 @@
     AppLoading
         - (nicco왈) 내가 항상 사용하는 첫번째 component이다.
         - 화면 뒤에서 실제 앱에 필요한 사항들을 로딩할 수 있다. 그 후에 application을 실행
+
 
     (App.js) 기본
         import { StatusBar } from 'expo-status-bar';
@@ -76,32 +86,34 @@
     (App.js)
         import { StatusBar } from 'expo-status-bar';
         import React, { useState } from 'react';
-        import { Asset } from 'expo-asset';
+        import { Asset } from 'expo-asset';         // $ npm install expo-asset
         import AppLoading from 'expo-app-loading';
         import { Text, Image } from 'react-native';
 
         const cacheImages = images => images.map(image =>{
         if(typeof image === "string"){
-            return Image.prefetch(image);
-        } else {                          # 이렇게 폴더에 있는 이미지를 가져오는 경우를 위해서 npm add expo-asset
-            return Asset.fromModule(image).downloadAsync();
+            return Image.prefetch(image);       // Image.prefetch -> React Native. React Native’s Image component has a prefetch method that will save the image into the device’s image cache:
+        } else {                                // 이렇게 폴더에 있는 이미지를 가져오는 경우를 위해서 npm add expo-asset
+            return Asset.fromModule(image).downloadAsync();     // $ npm install expo-asset , string이 아니고 file일 때 image를 가져올 수 있도록
+                                                                // Asset.fromModule(module): Returns the Asset instance representing an asset given its module or URL
+                                                                // downloadAsync(): Downloads the asset data to a local file in the device's cache directory. Once the returned promise is fulfilled without error, the localUri field of this asset points to a local file containing the asset data. The asset is only downloaded if an up-to-date local file for the asset isn't already present due to an earlier download. The downloaded Asset will be returned when the promise is resolved.
         }
         });
 
         export default function App() {
-        const [isReady, setIsReady] = useState(false);
-        const handleFinish = () => setIsReady(true);
-        const loadAssets = async () => {
+        const [isReady, setIsReady] = useState(false);      // React Hooks
+        const handleFinish = () => setIsReady(true);        // isReady를 true로 바꿔주도록 하는 것
+        const loadAssets = async () => {                    // 모든 종류의 assets load 하자. 이 강의에서는 두가지 종류 asset이 있다. image와 font
             const images = [
-            require("./assets/loginBg.jpg"),
-        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+            require("./assets/loginBg.jpg"),                // folder에 저장해 놓은 이미지를 가져온 것
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"    // url로 가져온 이미지
         ];
         console.log(cacheImages(images));
         }
         return isReady ? (<Text>I'm ready</Text>) : (
         <AppLoading 
-        onError={console.error} 
-        onFinish={handleFinish} 
+        onError={console.error}         // AppLoaing에 쓸 수 있는 것인 듯, Error가 발생할때 실행되는 함수 입력
+        onFinish={handleFinish}         // 역시 AppLoading에 쓸수 있는 것인 듯, Error 없이 완료되면 실행되는 함수 입력
         startAsync={loadAssets} />
         );
         }
@@ -123,11 +135,19 @@
         },
         ]
 
+        출력되는 것을 보다시피, 우리가 만든 cacheImages 함수는 Promise Array를 return 한다.
+
+        첫번째 Promise는 첫번째 이미지(Image.prefetch(image))를 downloadAsync 한 것이라고 설명했는데, prefetch한것 아닌가?
+        두번째 Promise는 두번째 이미지를 prefetch 한 것이라고 설명했는데, downloadAsync 한것 아닌가?..
+        
+        Promise에 대해서 알아보자
+            https://joshua1988.github.io/web-development/javascript/promise-for-beginners/
+            https://joshua1988.github.io/web-development/javascript/javascript-asynchronous-operation/
 
 # 6.3 Preloading Fonts
 
     expo의 vector-icons를 이용할 것임
-    설치: $ npm add @expo/vector-icons
+    설치: $ npm add @expo/vector-icons (또는 npm install @expo/vector-icons ?)
 
     font 패지지도 필요
     설치: $ expo install expo-font
