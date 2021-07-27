@@ -1,0 +1,4287 @@
+** 핸드폰에서 Expo가 저절로 꺼지는 오류 발생시
+    오타가 생겼을 때 오타 수정해주니 해결되었음 (alignItems: "Center" 를 "center" 로 바르게 고쳤더니 해결됨)
+
+# 6.1 Setup
+    github에 새 repository 필요 /airbnb-native-re
+
+    expo-cli 설치: $ npm i -g expo-cli (또는 yarn global add expo-cli)
+        확인: $ expo
+        실행: $ expo init (할 이름) - $ expo init airbnb-native
+            선택사항은 그냥 blank로
+                -> 프로젝트 생성(폴더 및 파일이 생성된다.)
+        경로변경: cd airbnb-native
+
+    github 저장:
+        git remote add https://github.com/Junanjunan/airbnb-native
+
+    다음 설명은 airbnb-native 폴더에..?
+
+    설치, 셋팅 완료 후 앱실행
+        (airbnb-native)
+            $ npm start
+
+        로그인 안되어있으면 해야한다. (LOGGED IN AS ~ 라고 떠야 함) 로그인해야 핸드폰에서 application 확인 가능
+            로그인 방법: $ expo login
+            미리 만들어둔 expo 아이디(email or username 나는 wnsghksk@gmail.com or taltalrealty)로 로그인
+            그러면 컴퓨터와 핸드폰이 연동된다.
+
+
+# 6.2 Preloading Images
+    
+    * 전체적인 설명은 docs.expo.io 에서 가져옴
+
+    AppLoading
+        - (nicco왈) 내가 항상 사용하는 첫번째 component이다.
+        - 화면 뒤에서 실제 앱에 필요한 사항들을 로딩할 수 있다. 그 후에 application을 실행
+
+    (App.js) 기본
+        import { StatusBar } from 'expo-status-bar';
+        import React from 'react';
+        import { StyleSheet, Text, View } from 'react-native';
+
+        export default function App() {
+        return (
+            <View style={styles.container}>
+            <Text>Welcome to Airbnb</Text>
+            <StatusBar style="auto" />
+            </View>
+        );
+        }
+
+        const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: '#fff',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        });
+
+    (App.js) 변경
+        import { StatusBar } from 'expo-status-bar';
+        import React from 'react';
+        import { AppLoading } from "expo";
+
+        export default function App() {
+        return <AppLoading />;
+        }
+
+        -> 오류 발생: 댓글 확인
+            AppLoading 이 expo 에서 분리되서 expo-app-loading 에 있나보네요.
+            expo install expo-app-loading 해서 설치하시고
+            import AppLoading from 'expo-app-loading' 해야 하네요.
+                    
+
+    이미지 불러오기
+    (App.js)
+        import { StatusBar } from 'expo-status-bar';
+        import React, { useState } from 'react';
+        import { Asset } from 'expo-asset';
+        import AppLoading from 'expo-app-loading';
+        import { Text, Image } from 'react-native';
+
+        const cacheImages = images => images.map(image =>{
+        if(typeof image === "string"){
+            return Image.prefetch(image);
+        } else {                          # 이렇게 폴더에 있는 이미지를 가져오는 경우를 위해서 npm add expo-asset
+            return Asset.fromModule(image).downloadAsync();
+        }
+        });
+
+        export default function App() {
+        const [isReady, setIsReady] = useState(false);
+        const handleFinish = () => setIsReady(true);
+        const loadAssets = async () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+        ];
+        console.log(cacheImages(images));
+        }
+        return isReady ? (<Text>I'm ready</Text>) : (
+        <AppLoading 
+        onError={console.error} 
+        onFinish={handleFinish} 
+        startAsync={loadAssets} />
+        );
+        }
+
+    이렇게하고 실행하면, 아래와 같은 console.log 출력
+
+        Array [
+        Promise {
+            "_U": 0,
+            "_V": 0,
+            "_W": null,
+            "_X": null,
+        },
+        Promise {
+            "_U": 0,
+            "_V": 0,
+            "_W": null,
+            "_X": null,
+        },
+        ]
+
+
+# 6.3 Preloading Fonts
+
+    expo의 vector-icons를 이용할 것임
+    설치: $ npm add @expo/vector-icons
+
+    font 패지지도 필요
+    설치: $ expo install expo-font
+
+    (App.js)
+        import { StatusBar } from 'expo-status-bar';
+        import React, { useState } from 'react';
+        import { Asset } from 'expo-asset';
+        import * as Font from 'expo-font';
+        import AppLoading from 'expo-app-loading';
+        import { Ionicons } from '@expo/vector-icons';
+        import { Text, Image } from 'react-native';
+
+        const cacheImages = images => images.map(image =>{
+        if(typeof image === "string"){
+            return Image.prefetch(image);
+        } else {                          
+            return Asset.fromModule(image).downloadAsync();
+        }
+        });
+
+        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))
+
+        export default function App() {
+        const [isReady, setIsReady] = useState(false);
+        const handleFinish = () => setIsReady(true);
+        const loadAssets = async () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+        ];
+        const fonts = [Ionicons.font]
+        const imagePromises = cacheImages(images);                  # array 임
+        const fontPromises = cacheFonts(fonts);                     # array 임
+        console.log(cacheFonts(fonts));
+        return Promise.all([...fontPromises, ...imagePromises])     # ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
+        }
+        return isReady ? (<Text>I'm ready</Text>) : (
+        <AppLoading 
+        onError={console.error} 
+        onFinish={handleFinish} 
+        startAsync={loadAssets} />
+        );
+        }
+
+
+## 7 REDUX SETUP
+
+# 7.0 usersSlice
+    (Gate.js)
+        import React from "react";
+
+        export default () => {
+            const isLoggedIn = False;
+            return (<View>{isLoggedIn? <TexT>Welcome</TexT> : <Text>Login Please</Text>}</View>);
+        }
+
+
+    (App.js)
+        import { StatusBar } from 'expo-status-bar';
+        import React, { useState } from 'react';
+        import { Asset } from 'expo-asset';
+        import * as Font from 'expo-font';
+        import AppLoading from 'expo-app-loading';
+        import { Ionicons } from '@expo/vector-icons';
+        import { Text, Image } from 'react-native';
+        import Gate from "./components/Gate";
+
+        const cacheImages = images => images.map(image =>{
+        if(typeof image === "string"){
+            return Image.prefetch(image);
+        } else {                          
+            return Asset.fromModule(image).downloadAsync();
+        }
+        });
+
+        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))
+
+        export default function App() {
+        const [isReady, setIsReady] = useState(false);
+        const handleFinish = () => setIsReady(true);
+        const loadAssets = async () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+        ];
+        const fonts = [Ionicons.font]
+        const imagePromises = cacheImages(images);
+        const fontPromises = cacheFonts(fonts);
+        return Promise.all([...fontPromises, ...imagePromises])
+        }
+        return isReady ? (
+            <Gate />
+        ) : (
+            <AppLoading 
+            onError={console.error} 
+            onFinish={handleFinish} 
+            startAsync={loadAssets} 
+            />
+        );
+        }
+
+    여기까지 하고 보면, 정 중앙에 Login Please 뜰 것임
+
+
+    * 이제 Redux toolkit을 설치하자
+        $ npm install @reduxjs/toolkit
+    * Redux 설치
+        $ npm add redux
+    * ?
+        $ npm add react-redux
+
+    설치가 모두 끝나면 Redux 시작
+    redux 폴더를 만들고 그 안에 store.js, usersSlice.js, rootReducer.js 만들자 (usersSlice.js - 우리의 첫 reducer?)
+
+    (redux/usersSlice.js)
+        import { createSlice } from "@reduxjs/toolkit"
+
+
+        const usersSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: false,
+                token: null             # 처음 상태에서 token: null -> token을 만든 이유는 token을 state에 저장하기 위해서다
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = true;
+                    state.token = action.payload.token;
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        })
+
+        export const {logIn, logOut} = usersSlice.actions;
+        export default usersSlice.reducer;
+
+    (redux/rootReducer.js)
+        import { combineReducers } from "redux";
+        import usersReducer from "./usersSlice";
+
+        export default combineReducers({
+            usersReducer
+        })
+
+
+7.1 login and logOut
+
+    rootReducer.js에서 모든 reducer들을 결합할 것이다
+
+    (redux/store.js)
+        import {configureStore} from "@reduxjs/toolkit";
+        import rootReducer from "./rootReducer";
+
+        const store = configureStore({
+            reducer: rootReducer
+        });
+
+        export default store;
+    
+    이제 store는 만들었으니 App.js에 연결해보자
+
+    (App.js)
+        import { StatusBar } from 'expo-status-bar';
+        import React, { useState } from 'react';
+        import { Asset } from 'expo-asset';
+        import * as Font from 'expo-font';
+        import AppLoading from 'expo-app-loading';
+        import { Ionicons } from '@expo/vector-icons';
+        import { Text, Image } from 'react-native';
+        import Gate from "./components/Gate";
+        import store from "./redux/store";
+
+        const cacheImages = images => images.map(image =>{
+        if(typeof image === "string"){
+            return Image.prefetch(image);
+        } else {                          
+            return Asset.fromModule(image).downloadAsync();
+        }
+        });
+
+        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))
+
+        export default function App() {
+        const [isReady, setIsReady] = useState(false);
+        const handleFinish = () => setIsReady(true);
+        const loadAssets = async () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+        ];
+        const fonts = [Ionicons.font]
+        const imagePromises = cacheImages(images);
+        const fontPromises = cacheFonts(fonts);
+        return Promise.all([...fontPromises, ...imagePromises])
+        }
+        return isReady ? (
+            <Provider store={store}>                    # react-redux에서 Provider를 가져와야 하고, Provider는 store에 접근할 수 있어야 한다.
+            <Gate />
+            </Provider>
+        ) : (
+            <AppLoading 
+            onError={console.error} 
+            onFinish={handleFinish} 
+            startAsync={loadAssets} 
+            />
+        );
+        }
+
+    여기까지 하고 새로고침하면, 아무 에러 발생하지 않아야 한다.
+
+    Gate component에 isLoggedIn이 false로 정의되어 있다.
+    이제 2가지 옵션이 있다. 첫번째 옵션은 일반적인 Redux 방식으로 하는 것이다. - mapStateToProps를 사용
+
+    (Gate.js)
+        import React from "react";
+        import { View, Text } from "react-native";
+
+        export default () => {
+            const isLoggedIn = false;
+            return (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                {isLoggedIn? <Text>Welcome</Text> : <Text>Login Please</Text>}
+                </View>
+            );
+        };
+    
+    이렇게 되어있던 것을 아래와 같이 변경
+
+        import React from "react";
+        import { View, Text } from "react-native";
+        import { connect } from "react-redux";
+
+        const Gate = props => {
+            console.log(props);
+            const isLoggedIn = false;
+            return (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                {isLoggedIn? <Text>Welcome</Text> : <Text>Login Please</Text>}
+            </View>
+            );
+        };
+
+        const mapStateToProps = (state) => {
+            console.log(state);
+            return {isLoggedIn: false}
+        }
+
+        export default connect(mapStateToProps)(Gate)
+
+    이렇게 해주고 Expo를 보면, 다음과 같이 출력
+
+        Object {
+        "usersReducer": Object {
+            "isLoggedIn": false,
+            "token": null,
+        },
+        }
+
+        -> mapStateToProps 의 console.log(state)가 출력된 것임
+        -> usersSlice.js 에 있는 것과 같음을 확인 가능
+
+    * hooks를 사용해서 코드를 줄일 수 있다. : useSelector 라는 hook을 사용해보자
+    
+    (Gate.js)
+        import React from "react";
+        import { View, Text } from "react-native";
+        import { connect, useSelector } from "react-redux";
+
+        export default () => {
+            const usersSlice = useSelector(state => state.usersReducer);
+            console.log(usersSlice);
+            return (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                {false? <Text>Welcome</Text> : <Text>Login Please</Text>}
+            </View>
+            );
+        };
+
+    selector는 state에 접근하게 해주고, state를 보내기도 한다.
+    userSelector는 state의 전부가 아닌 일부만 가져올 수 있기 때문에 유용하다.
+
+    위와 같이 하면 아래와 같이 출력 됨
+        Object {
+        "isLoggedIn": false,
+        "token": null,
+        }
+
+    usersSlice안에 isLoggedIn을 이용해서 다음과 같이 해도 됨
+
+    (Gate.js)
+        import React from "react";
+        import { View, Text } from "react-native";
+        import { connect, useSelector } from "react-redux";
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            return (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                {isLoggedIn? <Text>Welcome</Text> : <Text>Login Please</Text>}
+            </View>
+            );
+        };
+
+    이를 이용해서, usersSlice.js 의 isLoggedIn 값을 변경해서 화면을 변경해줄 수 있다. 다음과 같이
+
+    (redux/usersSlice.js)
+        import { createSlice } from "@reduxjs/toolkit"
+
+
+        const usersSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: true,
+                token: null
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = true;
+                    state.token = action.payload.token;
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        })
+
+        export const {logIn, logOut} = usersSlice.actions;
+        export default usersSlice.reducer;
+
+    TouchableOpacity, onPress를 이용할 건데
+    dispatch에 접근할 수 있어야 한다. dispatch를 가져올건데,
+    connect를 사용해서 mapDispatchToProps 로 가져올 수 있다.
+    또는 hook을 사용할 수 도 있다. (useDispatch)
+
+    (Gate.js)
+        import React from "react";
+        import { View, Text, TouchableOpacity } from "react-native";
+        import { useDispatch, useSelector } from "react-redux";
+        import { logIn, logOut } from "../redux/usersSlice";
+
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            const dispatch = useDispatch();
+            return (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                {isLoggedIn? (
+                    <TouchableOpacity onPress={() => dispatch(logOut())}>
+                        <Text>Log Out</Text>
+                    </TouchableOpacity>) : (
+                    <TouchableOpacity onPress={() => dispatch(logIn())}>
+                        <Text>Log In</Text>
+                    </TouchableOpacity>
+                    )}
+            </View>
+            );
+        };
+
+    위와 같이 해주고 화면을 클릭해주면, 오류가 발생
+    (redux/usersSlice.js)를 보면
+        import { createSlice } from "@reduxjs/toolkit"
+
+
+        const userSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: false,
+                token: null
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = false;
+                    state.token = action.payload.token;     # 로그인할 때 토큰을 줘야 한다. -> Gate.js에서 token을 하나 만들어보자
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        })
+
+        export const {logIn, logOut} = userSlice.actions;
+        export default userSlice.reducer;
+
+
+    (Gate.js)
+        import React from "react";
+        import { View, Text, TouchableOpacity } from "react-native";
+        import { useDispatch, useSelector } from "react-redux";
+        import { logIn, logOut } from "../redux/usersSlice";
+
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            const dispatch = useDispatch();
+            return (
+                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                    {isLoggedIn? (
+                        <TouchableOpacity onPress={() => dispatch(logOut())}>
+                            <Text>Log Out</Text>
+                        </TouchableOpacity>
+                        ) : (
+                        <TouchableOpacity onPress={() => dispatch(logIn("bs.token"))}>
+                            <Text>Log In</Text>
+                        </TouchableOpacity>
+                        )}
+                </View>
+            );
+        };
+
+    이렇게 해줬더니 오류는 안뜨는데, 화면 전환이 안된다.. 강의에서는 되는데... 
+    (redux/usersSlice.js)를 다음과 같이 해주었더니 전환됨
+        import { createSlice } from "@reduxjs/toolkit"
+
+
+        const userSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: false,
+                token: null
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = true;
+                    state.token = action.payload.token;
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        })
+
+export const {logIn, logOut} = userSlice.actions;
+export default userSlice.reducer;
+
+
+# 7.2 redux-persist part One
+    * 모바일에서 login 이 계속 유지되는 것을 해보도록 하자.
+    Redux Persist는 redux에서 뭔가를 바꿀때마다 state를 저장해준다. redux에서 뭔가 바뀐것들이 핸드폰에 저장된다.
+
+    $ npm install redux-persist
+
+    configureStore 설정을 바꿔야 함
+
+    (redux/store.js)
+        import { configureStore } from "@reduxjs/toolkit";
+        import { persistStore, persistReducer } from "redux-persist";
+        import rootReducer from "./rootReducer";
+
+        const persistConfig = {
+            key:'root',                        # 여기에 state를 어디에 저장하고 싶은지 Redux Persist 설정을 추가하면 된다. 우선 공식문서와 똑같이 작성
+            storage: AsyncStorage
+        }
+
+        const persistedReducer = persistReducer(persistConfig, rootReducer)     # rootReducer 자리: persist 하려는 reducer, persist는 save를 의미 -> Redux Persist에게 rootReducer에 변화가 있을 때마다 매번 저장하라고 하는 것임
+
+        const store = configureStore({
+            reducer: rootReducer
+        });
+
+        export default store;
+
+    이제 configureStore의 reducer를 바꿔보자
+    rootReducer가 이제 필요 없고 persistedReducer가 와야 한다.
+    persistedReducer로 Redux store를 설정(configure)하는 것이다.
+
+    (redux/store.js)
+        import { configureStore } from "@reduxjs/toolkit";
+        import { persistStore, persistReducer } from "redux-persist";
+        import rootReducer from "./rootReducer";
+        import { AsyncStorage } from "react-native";                    
+
+        const persistConfig = {
+            key: "root",                      
+            storage: AsyncStorage
+        }
+
+        const persistedReducer = persistReducer(persistConfig, rootReducer)     
+
+        const store = configureStore({
+            reducer: persistedReducer
+        });
+
+        export default store;
+
+        여기까지 했을때 오류는 없어야 한다.
+        # AsyncStore가 없는 걸로 나오면 (줄이 그어져서 나오면)
+            npm install @react-native-async-storage/async-storage
+            해주고 다시 import 해보면 될것임 (https://react-native-async-storage.github.io/async-storage/docs/install/)
+            나는 설치해줘도 없는걸로 뜬다... Expo에서 되긴 되는데...
+
+        store와 관련된 문제가 하나 있는데, store도 persist 되어야 한다.
+
+        persistReducer는 reducer를 저장하고, persistStore는 store를 저장한다
+        그러니 persistedStore를 만들어보자
+
+    (redux/store.js)
+        import { configureStore } from "@reduxjs/toolkit";
+        import { persistStore, persistReducer } from "redux-persist";
+        import rootReducer from "./rootReducer";
+        import { AsyncStorage } from "react-native";
+
+        const persistConfig = {
+            key: "root",                        
+            storage: AsyncStorage
+        }
+
+        const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+        const store = configureStore({
+            reducer: persistedReducer
+        });
+
+        const persistedStore = persistStore(store);
+
+        export default store;
+
+    여기까지 하고 저장해보면, A non-seriaizable value was ~ 하고 오류가 뜨는데,
+    Redux tooklik이 Redux Persist가 가진 action들과 문제가 생긴 것이라 함
+
+    (redux/store.js)
+        import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+        import { persistStore, persistReducer } from "redux-persist";
+        import rootReducer from "./rootReducer";
+        import { AsyncStorage } from "react-native";
+        import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE } from "redux-persist/es/constants";
+
+        const persistConfig = {
+            key: "root",                        
+            storage: AsyncStorage
+        };
+
+        const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+        const store = configureStore({
+            reducer: persistedReducer,
+            middleware: getDefaultMiddleware({
+                serializableCheck:{
+                    ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+                }
+            })
+        });
+
+        const persistedStore = persistStore(store);
+
+        export default store;
+
+    Redux toolkit이 action을 만드는 방법을 가지고 있는데, Redux Persist는 다른 종류의 action을 가지고 있다.
+    따라서 이 둘이 잘 작동되도록 Redux toolkit에게 Redux Persist의 모든 action 들을 irgnore 하라고 한것임
+    (Redux toolkit은 Redux Persist의 action들이 이상하다고 생각하기 떄문)
+
+
+# 7.3 redux-persist part Two
+    PersistGate: 화면 rendering을 위해 state를 load 할 때까지 기다려주는 component임
+                핸드폰에 저장되어 있는 state를 load할 것이다.
+
+    (redux/store.js) 에 있던 persistedStore 의 이름을 persistor로 바꿔주고 App.js에서 이용
+        import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+        import { persistStore, persistReducer } from "redux-persist";
+        import rootReducer from "./rootReducer";
+        import { AsyncStorage } from "react-native";
+        import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE } from "redux-persist/es/constants";
+
+        const persistConfig = {
+            key: "root",                        
+            storage: AsyncStorage
+        };
+
+        const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+        const store = configureStore({
+            reducer: persistedReducer,
+            middleware: getDefaultMiddleware({
+                serializableCheck:{
+                    ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+                }
+            })
+        });
+
+        export const persistor = persistStore(store);
+
+        export default store;
+
+    (App.js)
+        import React, { useState } from 'react';
+        import { Asset } from 'expo-asset';
+        import * as Font from 'expo-font';
+        import AppLoading from 'expo-app-loading';
+        import { Ionicons } from '@expo/vector-icons';
+        import { Image } from 'react-native';
+        import { Provider } from "react-redux";
+        import { PersistGate } from 'redux-persist/integration/react';
+        import Gate from "./components/Gate";
+        import store, { persistor } from "./redux/store";
+
+        const cacheImages = images => images.map(image =>{
+        if(typeof image === "string"){
+            return Image.prefetch(image);
+        } else {                          
+            return Asset.fromModule(image).downloadAsync();
+        }
+        });
+
+        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))
+
+        export default function App() {
+        const [isReady, setIsReady] = useState(false);
+        const handleFinish = () => setIsReady(true);
+        const loadAssets = async () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+        ];
+        const fonts = [Ionicons.font]
+        const imagePromises = cacheImages(images);
+        const fontPromises = cacheFonts(fonts);
+        return Promise.all([...fontPromises, ...imagePromises])
+        }
+        return isReady ? (
+            <Provider store={store}>                    # isLoggedIn === false
+            <PersistGate persistor={persistor}>       # isLoggedIn === true (핸드폰에서 state를 load 한 후)
+                <Gate />
+            </PersistGate>
+            </Provider>
+        ) : (
+            <AppLoading 
+            onError={console.error} 
+            onFinish={handleFinish} 
+            startAsync={loadAssets} 
+            />
+        );
+        }
+
+    여기까지 해도 오류 없어야 함
+    이렇게 하고, Log In이 띄어져있을 떄 save로 refreshing, Log Out 띄어져있을때 save로 refreshing 해서 화면 유지가 되면, persist가 되는 것임
+
+    * React Native 에서 (프로처럼) Redux를 debug 하는 것을 보자
+        expo documentation 사이트에서 (docs.expo.io) redux를 검색하면 https://docs.expo.io/workflow/debugging/#debugging-redux
+        , React Native Debugger 를 다운받을 수 있는 링크가 나옴 (https://github.com/jhen0409/react-native-debugger/releases)
+        beta는 오류가 많으니 beta 버전이 아닌것으로 설치해서 실행하자
+
+        docs에서 보면, ctrl+t 로 실행을 해보면, Port가 입력되어져서 나옴 19001 -> confirm
+        ** 강의에서는 19001이라고 했는데, 공식문서를 보면 19000 포트로 confirm 하라고 함.
+            강의 말고 공식문서대로 19000 포트로 confirm 했더니 작동 됨
+        처음에 열기 전에 떠있던 창은 닫아주자
+
+        -> React Native Debugger가 state를 보여준다.
+
+
+# 7.4 Recap!
+    preloading
+    (App.js)
+    const loadAssets = Async () 에서 Async가 필요없다고 지웠음
+    <AppLoading startAsync={loadAssets}에 loadAssets에 await를 붙임
+        -> <AppLoading startAsync={await loadAssets}
+            왜냐면 많은 promise 들을 return 하니까 모든 promise 들이 load 될 때까지 기다려야 한다.
+        라고 하고서는 또 지움...
+
+    (redux/store.js)
+        const persistConfg = {
+            key: "root",
+            storage: AsyncStorage
+        }
+    에서
+    key는 어떻게 state를 핸드폰에 저장하고 싶은지 알려주는 것임
+    storage는 저장하기 위해 어떤 걸 사용하고 싶은지에 관한 것이다. 우리는 (React-Native의) AsyncStorage를 이용
+        AsyncStorage는 다음과 같이 사용 가능
+        AsyncStorage.getItem("root")
+        그러면 저장한 모든 state를 찾을 수 있다.
+
+
+# 8.0 Auth Navigation part One
+    
+    React navigation을 이용하자
+    https://reactnavigation.org/docs/getting-started
+        $ npm install @react-navigation/stack
+        ($ npm install @react-navigation/native)
+        $ expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context @react-native-community/masked-view
+            https://dog-developers.tistory.com/183 보안 오류 해결 후
+                1. windows PowerShell 프로그램을 관리자 권한으로 실행합니다.
+                2. Get-ExecutionPolicy 명령어를 작성하면 본인의 권한? 상태가 보여집니다.
+                3. 권한이 RemoteSigned 가 아니라면 Set-ExecutionPolicy RemoteSigned 를 입력
+                4. Get-ExecutionPolicy 명령어로 다시 한번 확인 하면 RemoteSigned로 변경 확인.
+            Error: spawn yarnpkg ENOENT 뜨면
+                1. npm install --global yarn
+                2. expo update 후 다시 실행해주면 되었음
+
+    (navigation/Auth.js)
+        import { createStackNavigator } from "@react-navigation/stack";
+
+        const Auth = createStackNavigator();
+
+        export default () => <Auth.Navigator>
+                                                # navigator 안에는 screen이 와야 한다. 아직 없으니 screen을 만들자
+        </Auth.Navigator>   
+
+    (screens/Welcome.js), (screens/SignUp.js), (screen/SignIn.js) 생성
+        import React from "react";
+        import {View, Text} from "react-native";
+
+        export default () => (
+            <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                <Text>Welcome</Text>        # 각각 Sign Up, Sign In으로 3개의 screen 생성 
+            </View>
+        );
+
+    (navigation/Auth.js)
+        import React from "react";
+        import { createStackNavigator } from "@react-navigation/stack";
+        import Welcome from "../screens/Welcome";
+        import SignIn from "../screens/SignIn";
+        import SignUp from "../screens/SignUp";
+
+        const Auth = createStackNavigator();
+
+        export default () => (
+            <Auth.Navigator>
+                <Auth.Screen name="Welcome" component={Welcome} />
+                <Auth.Screen name="SignIn" component={SignIn} />
+                <Auth.Screen name="SignUp" component={SignUp} />
+            </Auth.Navigator>
+        );  
+
+    이제 Gate.js에서 render 해주자
+    (components/Gate.js)
+        import React from "react";
+        import { View, Text, TouchableOpacity } from "react-native";
+        import { useDispatch, useSelector } from "react-redux";
+        import { logIn, logOut } from "../redux/usersSlice";
+
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            const dispatch = useDispatch();
+            return (
+                <NavigationContainer>   # Navigator를 render 하고 싶으면 NavigationContainer로 감싸주어야 한다.(아니면 오류)
+                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}> # 이 부분은 이제 필요 없음 삭제
+                    {isLoggedIn? (
+                        <TouchableOpacity onPress={() => dispatch(logOut())}>
+                            <Text>Log Out</Text>
+                        </TouchableOpacity>
+                        ) : (
+                        <Auth /># user가 로그아웃 하면 보여주는 이부분에 Auth를 render할 것이다.
+                        )}
+                </View> # 삭제
+                </NavigationContainer>
+            );
+        };
+
+    (components/Gate.js)
+        import React from "react";
+        import { View, Text, TouchableOpacity } from "react-native";
+        import { useDispatch, useSelector } from "react-redux";
+        import { logIn, logOut } from "../redux/usersSlice";
+        import Auth from "../navigation/Auth";
+        import { NavigationContainer } from "@react-navigation/native";
+
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            const dispatch = useDispatch();
+            return (
+                <NavigationContainer>   
+                    {isLoggedIn? (
+                        <TouchableOpacity onPress={() => dispatch(logOut())}>
+                            <Text>Log Out</Text>
+                        </TouchableOpacity>
+                        ) : (
+                        <Auth />
+                        )}
+                </NavigationContainer>
+            );
+        };
+
+
+# 8.1 Auth Navigation part Two
+    screen들이 기본값으로 특별한 props를 가지고 있다. 아래와 같이 확인해보자
+    (screens/Welcome.js)
+        import React from "react";
+        import {View, Text} from "react-native";
+
+        export default (props) => {
+            console.log(props);
+            return(
+                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                    <Text>Welcome~!</Text>
+                </View>
+            );
+        };
+
+    위와 같이 하면 자동적으로 갖고있는 props들이 console.log로 출력된 것을 볼 수 있다.
+    출력된 것중 우리는 navigate를 사용할 것이다.
+
+    (screens/Welcome.js)
+        import React from "react";
+        import {View, Text, Button} from "react-native";
+
+        export default ({ navigation }) => {
+            return(
+                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
+                    <Text>Welcome~!</Text>
+                    <Button onPress={() => navigation.navigate("SignUp")} title={"Sign Up"}></Button>
+                    <Button onPress={() => navigation.navigate("SignIn")} title={"Sign In"}></Button>
+                </View>
+            );
+        };
+
+    (navigation/Auth.js)
+        import React from "react";
+        import { Platform, View } from "react-native";
+        import { createStackNavigator } from "@react-navigation/stack";
+        import { Ionicons } from "@expo/vector-icons";
+        import Welcome from "../screens/Welcome";
+        import SignIn from "../screens/SignIn";
+        import SignUp from "../screens/SignUp";
+
+        const Auth = createStackNavigator();
+
+        const isAndroid = Platform.Os === "android"
+
+        export default () => (
+            <Auth.Navigator mode="modal" headerMode="float" screenOptions={{
+                headerBackTitleVisible: false,
+                headerTransparent: true,
+                headerBackImage: () => ( 
+                    <View style={{paddingLeft: 10}}>
+                        <Ionicons 
+                            name={isAndroid ? "md-arrow-down": "ios-arrow-down"}    # expo.github.io/vector-icons/ 에서 아이콘 선택 가능
+                            size={28} 
+                        />
+                    </View>
+                )
+            }}>
+                <Auth.Screen name="Welcome" component={Welcome} />
+                <Auth.Screen name="SignIn" component={SignIn} />
+                <Auth.Screen name="SignUp" component={SignUp} />
+            </Auth.Navigator>
+        );    
+
+
+# 8.2 Welcome Screen part One
+    $ npm install styled-components
+        styled-components는 React Native에서 CSS 작업을 할 수 있게 해준다.
+
+    우선 component를 옮겨보자
+    (components/Auth/BackBtn.js)
+        import React from "react";
+        import { Platform } from "react-native";
+        import styled from "styled-components/native";
+        import { Ionicons } from "@expo/vector-icons";
+
+        const isAndroid = Platform.OS ==="android";
+
+        const Container = styled.View``     # 이게 styled-components이고, ``안에 style 적용해주면 되는 듯
+
+        export default () => <Container><Ionicons 
+        name={isAndroid ? "md-arrow-back-circle": "md-arrow-back"}
+        size={28} 
+        /></Container>
+
+    (navigation/Auth.js)
+        import React from "react";
+        import { createStackNavigator } from "@react-navigation/stack";
+        import Welcome from "../screens/Welcome";
+        import SignIn from "../screens/SignIn";
+        import SignUp from "../screens/SignUp";
+        import BackBtn from "../components/Auth/BackBtn";
+
+        const Auth = createStackNavigator();
+
+        const isAndroid = true;
+
+        export default () => (
+            <Auth.Navigator mode="modal" headerMode="float" screenOptions={{
+                headerBackTitleVisible: false,
+                headerTransparent: true,
+                headerBackImage: () => <BackBtn />
+            }}>
+                <Auth.Screen name="Welcome" component={Welcome} />
+                <Auth.Screen name="SignIn" component={SignIn} />
+                <Auth.Screen name="SignUp" component={SignUp} />
+            </Auth.Navigator>
+        );  
+
+    (screens/Welcome.js)
+        import React from "react";
+        import { StatusBar } from "react-native";
+        import styled from "styled-components/native";
+
+        const LOGO_URL = "https://blog.kakaocdn.net/dn/95jT7/btqQCAwEbDf/m30lmOx9xg7fKaPzQsFfJ1/img.jpg"
+
+        const Container = styled.View``;
+
+        const Image = styled.Image``;
+
+        const Logo = styled.Image` # React-native는 외부에서 url로 이미지를 가져올때, 높이, 가로 길이를 설정해주어야 화면에나타난다.
+            width: 100px;           
+            height: 100px;
+        `;
+
+        export default ({ navigation }) => {
+            return(
+                <Container>
+                    <Logo source={{uri:LOGO_URL}} /> # React-native는 외부에서 url로 이미지를 가져올때, 높이, 가로 길이를 설정해주어야 화면에나타난다.
+                    <Image source={require("../assets/loginBg.jpg")} />
+                    <StatusBar barStyle="light-content" />
+                </Container>
+            );
+        };
+
+    조금 더 디자인 해보자
+    $ expo install expo-blur
+
+    (screens/Welcome.js)
+        import React from "react";
+        import { StatusBar } from "react-native";
+        import styled from "styled-components/native";
+        import { BlurView } from 'expo-blur';
+
+        const LOGO_URL = "https://blog.kakaocdn.net/dn/95jT7/btqQCAwEbDf/m30lmOx9xg7fKaPzQsFfJ1/img.jpg"
+
+        const Container = styled.View`
+            flex: 1;
+        `;
+
+        const Image = styled.Image`
+            position: absolute;
+            z-index:-1;
+            top: 0;
+        `;
+
+        const Logo = styled.Image` 
+            width: 100px;           
+            height: 100px;
+        `;
+
+        export default ({ navigation }) => {
+            return(
+                <Container>
+                    <BlurView
+                        intensity={10}
+                        tint="light"
+                        style={{
+                            flex: 1,
+                            width: "100%",
+                            alignItems: "center",
+                            justifyContent: "center"
+                        }}>
+                        <Logo source={{uri:LOGO_URL}} />
+                    </BlurView>
+                    <Image source={require("../assets/loginBg.jpg")} />
+                    <StatusBar barStyle="light-content" />
+                </Container>
+            );
+        };
+
+
+# 8.3 Welcome Screen part Two
+    $ npm install prop-types
+        우리가 주고받는 props 타입들이 올바른지 체크하기 위해 설치
+
+    (components/Auth/Btn.js)
+        import React from "react";
+        import { TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import PropTypes from "prop-types"
+
+        const Button = styled.View`
+        `;
+
+        const Text = styled.Text`
+        `;
+
+        const Btn = ({onPress, text, accent = false}) => (
+            <TouchableOpacity onPress={onPress}>
+                <Button accent={accent}>
+                    <Text accent={accent}>{text}</Text>
+                </Button>
+            </TouchableOpacity>
+        );
+
+        Btn.propTypes = {
+            onPress: PropTypes.func.isRequired,
+            text: PropTypes.string.isRequired,
+            acent: PropTypes.bool
+        };
+
+        export default Btn;
+
+    (screens/Welcome.js)
+        import React from "react";
+        import { StatusBar } from "react-native";
+        import styled from "styled-components/native";
+        import { BlurView } from 'expo-blur';
+        import Btn from "../components/Auth/Btn";
+
+        const LOGO_URL = "https://blog.kakaocdn.net/dn/95jT7/btqQCAwEbDf/m30lmOx9xg7fKaPzQsFfJ1/img.jpg"
+
+        const Container = styled.View`
+            flex: 1;
+        `;
+
+        const Image = styled.Image`
+            position: absolute;
+            z-index:-1;
+            top: 0;
+        `;
+
+        const Logo = styled.Image` 
+            width: 100px;           
+            height: 100px;
+        `;
+
+        const BtnContainer = styled.View``;
+
+        export default ({ navigation }) => {
+            const goToSignUp = () => navigation.navigate("SignUp");
+            const goToSignIn = () => navigation.navigate("SignIn");
+            return(
+                <Container>
+                    <BlurView
+                        intensity={10}
+                        tint="light"
+                        style={{
+                            flex: 1,
+                            width: "100%",
+                            alignItems: "center",
+                            justifyContent: "center"
+                        }}>
+                        <Logo source={{uri:LOGO_URL}} />
+                        <BtnContainer>
+                            <Btn onPress={goToSignUp} text={"Sign Up"} accent={true} />
+                            <Btn onPress={goToSignIn} text={"Sign In"} />
+                        </BtnContainer>
+                    </BlurView>
+                    <Image source={require("../assets/loginBg.jpg")} />
+                    <StatusBar barStyle="light-content" />
+                </Container>
+            );
+        };
+
+    여기까지 하면, Btb.js를 만든 것을 어떻게 적용하는 지 확인 할 수 있었다.
+    이제 좀 더 꾸며보자
+
+    (colors.js)
+        export default {
+            red: "#FF5A5F",
+            black: "rgb(35, 35, 35)"
+        }
+
+    (components/Auth/Btn.js)
+        import React from "react";
+        import { Dimensions, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import PropTypes from "prop-types"
+        import colors from "../../colors";
+
+        const { width } = Dimensions.get("screen")      # 핸드폰에서 해상도가 얼마나 큰지 모르니까 우선 이걸 호출 / { } 표시해준게 비구조화 할당으로 처리해준 것..?
+
+        const Button = styled.View`
+            border: 1px solid ${props => (props.accent ? "transparent" : colors.black)};
+            border-radius: 10px;
+            padding: 15px 0px;
+            align-items: center;
+            width: ${width /2}px;           # 어떤 화면이든 화면가로크기의 절반으로 설정       
+            background-color: ${props => (props.accent ? colors.red : "transparent")}
+            `;
+
+        const Text = styled.Text`
+            color: ${props => (props.accent ? "white" : "black")};
+        `;
+
+        const Btn = ({onPress, text, accent = false}) => (
+            <TouchableOpacity onPress={onPress}>
+                <Button accent={accent}>
+                    <Text accent={accent}>{text}</Text>
+                </Button>
+            </TouchableOpacity>
+        );
+
+        Btn.propTypes = {
+            onPress: PropTypes.func.isRequired,
+            text: PropTypes.string.isRequired,
+            acent: PropTypes.bool
+        };
+
+        export default Btn;
+
+
+# 8.4 Sign In part One
+    (navigations/Auth.js)
+        import React from "react";
+        import { createStackNavigator } from "@react-navigation/stack";
+        import Welcome from "../screens/Welcome";
+        import SignIn from "../screens/SignIn";
+        import SignUp from "../screens/SignUp";
+        import BackBtn from "../components/Auth/BackBtn";
+
+        const Auth = createStackNavigator();
+
+        const isAndroid = true;
+
+        export default () => (
+            <Auth.Navigator mode="modal" headerMode="float" screenOptions={{
+                headerTitleStyle:{
+                    color: "white"
+                },
+                headerBackTitleVisible: false,
+                headerTransparent: true,
+                headerBackImage: () => <BackBtn />
+            }}>
+                <Auth.Screen name="Welcome" component={Welcome} options={{
+                    headerTitleStyle: {
+                        color: "white"
+                    }
+                }}/>
+                <Auth.Screen name="SignIn" component={SignIn} options={{title: "Sign In"}} />
+                <Auth.Screen name="SignUp" component={SignUp} options={{title: "Sign Up"}} />
+            </Auth.Navigator>
+        );  
+
+    screens 폴더에 있는 Welcome.js, SignIn.js, SignUp.js 모두 Auth라는 폴더를 하나 더 만들어서 넣어주고 다른 파일에서도 경로 변경 해주었음
+        (screens/Auth/Welcome.js, SignIn.js, SignUp.js)
+    
+    (screens/Auth/SignIn.js)
+        import React from "react";
+        import {View, Text} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+        `;
+
+        const TextInput = styled.TextInput``;
+
+        export default () => {
+            const handleSubmit = () => alert("Sending data...");
+            return(
+                <Container>
+                    <TextInput placeholder="Email" keyboardType="email-address"></TextInput>
+                    <TextInput placeholder="Password" secureTextEntry></TextInput>
+                    <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                </Container>
+            );
+        };
+
+
+# 8.5 Sign In part Two
+    이제 사용자 이름과 비밀번호를 state에 등록해보자
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {View, Text} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+        `;
+
+        const TextInput = styled.TextInput``;
+
+        export default () => {
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <Container>
+                    <TextInput autoCapitalize="none" onChangeText={(text) => setUsername(text)} value={username} placeholder="Email" keyboardType="email-address"></TextInput>
+                    <TextInput onChangeText={(text) => setPassword(text)} value={password} placeholder="Password" secureTextEntry></TextInput>
+                    <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                </Container>
+            );
+        };
+
+    기본로직 작성, 되는것 확인, 이제 좀 더 꾸며보자
+
+    (components/Auth/Input.js)
+        import React from "react";
+        import { Dimensions, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+
+
+
+        const { width } = Dimensions.get("screen")      
+
+        const Container = styled.TextInput`
+            width: ${width/1.5}px;
+        `;
+
+        const Input = ({value, placeholder, isPassword=false, autoCapitalize}) => (
+            <Container 
+                value={value} 
+                placeholder={placeholder} 
+                secureTextEntry={isPassword ? true: false} 
+                autoCapitalize={autoCapitalize}
+                onChangeText = {(text) => stateFn(text)} 
+            />
+        );
+
+        export default Input;
+
+    위 Input을 SignIn에 사용해보자
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {View, Text} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+        `;
+
+        const TextInput = styled.TextInput``;
+
+        export default () => {
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <Container>
+                    <Input 
+                        value={username} 
+                        placeholder="Username" 
+                        autoCapitalize="none" 
+                        stateFn={setUsername}
+                    />
+                    <Input 
+                        value={password} 
+                        placeholder="Password" 
+                        stateFn={setPassword}    
+                    />
+                    <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                </Container>
+            );
+        };
+
+    여기까지 하고 SignIn 입력해보면 되는것 확인 가능
+
+    마무리로 propTypes 처리해주자
+
+
+# 8.6 Bugfixing
+
+    (components/Auth/input.js)
+        import React from "react";
+        import { Dimensions, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import PropTypes from "prop-types"
+        import colors from "../../colors";
+
+
+
+        const { width } = Dimensions.get("screen")      
+
+        const Container = styled.TextInput`
+            width: ${width/2}px;
+            padding: 12.5px 10px;
+            border: 1px solid ${colors.black};
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        `;
+
+        const Input = ({value, placeholder, isPassword=false, autoCapitalize, stateFn}) => (
+            <Container 
+                value={value} 
+                placeholder={placeholder} 
+                secureTextEntry={isPassword ? true: false} 
+                autoCapitalize={autoCapitalize}
+                onChangeText = {(text) => stateFn(text)}
+            />
+        );
+
+        Input.propTypes = {
+            value: PropTypes.string,
+            placeholder: PropTypes.string,
+            isPassword: PropTypes.bool,
+            autoCapitalize: PropTypes.string,
+            stateFn: PropTypes.func.isRequired
+        }
+
+        export default Input;
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {View, Text, StatusBar} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default () => {
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <Container>
+                    <StatusBar barStyle="light-content" />
+                    <InputContainer>
+                        <Input 
+                            value={username} 
+                            placeholder="Username" 
+                            autoCapitalize="none" 
+                            stateFn={setUsername}
+                        />
+                        <Input 
+                            value={password} 
+                            placeholder="Password" 
+                            stateFn={setPassword}    
+                        />
+                    </InputContainer>
+                    <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                </Container>
+            );
+        };
+
+    SignUp.js 에도 붙여넣기 할수 있는데, 붙여넣기를 하지 말고 component를 만들어서 이용하자
+
+    KeyboardAvoidingView: Keyboard로부터 방해받지 않도록 할 부분을 감싸주면 된다.
+
+    Keyboard.dismiss() : input 밖을 탭하면 키보드가 사라지도록 하는 함수
+    TouchableWithoutFeedback 에 Keyboard.dimiss()를 적용해서, 원하는 범위 만큼 감싸서 적용하자
+
+    (screens/Auth/SignUp.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default () => {
+            const [firstname, setFirstname] = useState("");
+            const [lastname, setLastname] = useState("");
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            const dismissKeyboard = () => Keyboard.dismiss();
+            return(
+                <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                            <KeyboardAvoidingView>
+                            <InputContainer>
+                                <Input 
+                                    value={firstname} 
+                                    placeholder="First name" 
+                                    autoCapitalize="none" 
+                                    stateFn={setFirstname}
+                                />
+                                <Input 
+                                    value={lastname} 
+                                    placeholder="Last name" 
+                                    autoCapitalize="none" 
+                                    stateFn={setLastname}
+                                />
+                                <Input 
+                                    value={username} 
+                                    placeholder="Username" 
+                                    autoCapitalize="none" 
+                                    stateFn={setUsername}
+                                />
+                                <Input 
+                                    value={password} 
+                                    placeholder="Password" 
+                                    stateFn={setPassword}    
+                                />
+                            </InputContainer>
+                            <Btn text={"Sign Up"} accent onPress={handleSubmit} />
+                            </KeyboardAvoidingView>
+                    </Container>
+                </TouchableWithoutFeedback>
+            );
+        };
+
+    위 부분을 component로 만들고 대입해보자
+
+    (components/DismissKeyboard.js)
+        import React from "react";
+        import { Keyboard, TouchableWithoutFeedback } from "react-native";
+
+        export default ({children}) => {                    # children: 리액트에서 children이라는 prop은 컴포넌트 안에 있는 어떤 내용이든 자동적으로 가져와준다.
+            const onPress = () => Keyboard.dismiss();
+            return (
+            <TouchableWithoutFeedback onPress={onPress}>
+                {children}
+            </TouchableWithoutFeedback>
+            );
+        }
+
+
+# 8.7 apiClient
+    API를 이용해서 SignUp, SignIn 등 해볼 것인데, 이를 위해서 Axios 패키지를 설치, 이용
+        $ npm install axios
+        axios는 API와 데이터를 주고받는 패키지임
+
+    (api.js) 생성
+        import axios from "axios";
+
+        export const createAccount = axios.post("http://127.0.0.1:8000/api/v1/users", {});   // login에도 똑같이 처리해줘야 하기 때문에 좋지 못한 방식
+        export const login = axios.post("http://127.0.0.1:8000/api/v1/users/login/" {});
+        axios.get("URL", {jwt})       // profile 같은 경우는 다음과 같은 식으로 처리  
+
+        // 함수 하나를 만들어서 API랑 상호수신하도록 하는 더 좋은 방법이 있다.
+
+    (api.js)
+        import axios from "axios";
+
+        // make easy request without URL copypasting.
+        // make post, get, delete, put requests.
+        // send jwt automatically
+
+        const callApi = async(method, path, data, jwt) => {
+            const headers = {
+                Authorization: jwt,                     // 기본적으로 JWT는 authorization에 넣어주어야 함
+                "Content-Type": "application/json"
+            };
+            const baseUrl = "http://127.0.0.1:8000/api/v1";
+            const fullUrl = `${baseUrl}${path}`;
+            if(method === "get" || method === "delete"){
+                axios.delete()
+                return axios[method](fullUrl, {headers});
+            } else{                                             // axios.get() 이나, axios.put() 등으로 하고 괄호 안에 무엇이 들어가야 하는지 참조사항을 보면, put등에는 get에는 없어도 되는 data 등이 필요함
+                return axios[method](fullUrl, data, {headers});
+            }
+        };
+        // method: post, get, delete 등
+        // path: /users, /users/login 등
+        // data: (post를 할때) 사용자를 생성할 때 data를 보낸다. (get을 할때는 필요없지만)
+        // jwt
+
+        export const createAccount = form => callApi("post", "/users/", form);      // Sign In을 할때 함수를 호출하는 방식은 다를 것이다. -> 왜냐하면 Sign In을 할 때는 Redux를 통해 호출할 것이기 때문
+
+
+# 8.8 Create Account part One
+    Redux를 사용하지 않고 사용자 생성을 해보자 -> Redux는 로그인을 할때는 관여 하지만, 유저 생성을 할때는 딱히 관여하지 않는다.
+
+    (components/Auth/Input.js)
+        import React from "react";
+        import { Dimensions, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import PropTypes from "prop-types"
+        import colors from "../../colors";
+
+
+
+        const { width } = Dimensions.get("screen")      
+
+        const Container = styled.TextInput`
+            width: ${width/2}px;
+            padding: 12.5px 10px;
+            border: 1px solid ${colors.black};
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        `;
+
+        const Input = ({value, placeholder, isPassword=false, autoCapitalize, stateFn, keyboardType}) => (      // 이부분 추가해준 것임
+            <Container
+                KeyboardType={keyboardType}         // 이부분 추가해준 것임
+                value={value} 
+                placeholder={placeholder} 
+                secureTextEntry={isPassword ? true: false} 
+                autoCapitalize={autoCapitalize}
+                onChangeText = {(text) => stateFn(text)}
+            />
+        );
+
+        Input.propTypes = {
+            value: PropTypes.string,
+            placeholder: PropTypes.string,
+            isPassword: PropTypes.bool,
+            autoCapitalize: PropTypes.string,
+            stateFn: PropTypes.func.isRequired
+        }
+
+        export default Input;
+
+
+    email을 정규식으로 검증하자.
+        emailregex.com ->구글에 is email regular expression 입력하면 나옴
+            General Email Regex를 복사
+            (utils.js)에 아래와 같이 입력 /와 /; 사이에 복붙
+                export const isEmail = (email) => {
+                    const regEx =  /복붙/;
+                    return regEx.test(email);
+                };
+                // 간단한 email validation 함수를 작성해준것임
+                            
+    (screens/Auth/SignUp.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView, Keyboard} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+        import { isEmail } from "../../utils";
+        import { createAccount } from "../../api";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default () => {
+            const [firstName, setFirstname] = useState("");
+            const [lastName, setLastname] = useState("");
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const validateForm = () =>{
+                if(
+                    firstName === "" || 
+                    lastName === "" || 
+                    email === "" || 
+                    password === ""
+                    ) {
+                    alert("All fields are required.");
+                    return;
+                }
+                if(!isEmail(email)){
+                    alert("Please add a valid email.");
+                    return;
+                }
+            }
+            const handleSubmit = async() => {
+                validateForm();
+                try {                                       // 이렇게 해주고 SignUp을 통해 User 생성해주면 됨 -> Django Admin page에서 확인
+                    const data = await createAccount({
+                        first_name: firstName,              // first_name -> (airbnb-api/users/serializers.py의 UserSerializer의 이름 형식을 그대로 가져온 것)
+                        last_name: lastName,
+                        email,
+                        username: email,
+                        password
+                    });
+                    console.log(data);              // 이렇게 해주면 여러가지 것들 나오는데, 그중 접속상태를 알려주는 status 를 이용 할 것임  ->   const data는 const { status }로, console.log(data)는 console.log(status)로 바꿔서 유저생성할때 상태가 어떤지 확인할 것임
+                } catch(e){
+                    console.warn(e);
+                }
+            };
+            const dismissKeyboard = () => Keyboard.dismiss();
+            return(
+                    <DismissKeyboard>
+                        <Container>
+                            <StatusBar barStyle="light-content" />
+                                <KeyboardAvoidingView>
+                                <InputContainer>
+                                    <Input 
+                                        value={firstName} 
+                                        placeholder="First name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setFirstname}
+                                    />
+                                    <Input 
+                                        value={lastName} 
+                                        placeholder="Last name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setLastname}
+                                    />
+                                    <Input
+                                        keyboardType={"email-address"}
+                                        value={email} 
+                                        placeholder="E-mail" 
+                                        autoCapitalize="none" 
+                                        stateFn={setEmail}
+                                    />
+                                    <Input 
+                                        value={password} 
+                                        placeholder="Password" 
+                                        stateFn={setPassword}    
+                                    />
+                                </InputContainer>
+                                <Btn text={"Sign Up"} accent onPress={handleSubmit} />
+                                </KeyboardAvoidingView>
+                        </Container>
+                    </DismissKeyboard>
+            );
+        };
+
+        // Android Studio에서 바로 생성되어야 하고, 
+            나는 안되었음. 
+            (api.js)
+                import axios from "axios";
+
+
+                const callApi = async(method, path, data, jwt) => {
+                    const headers = {
+                        Authorization: jwt,
+                        "Content-Type": "application/json"
+                    };
+                    const baseUrl = "http://10.0.2.2:8000/api/v1";          # 127.0.0.1 대신 10.0.2.2 를 이용하니 emulator에서 user 생성 가능했음 https://stackoverflow.com/questions/5528850/how-do-you-connect-localhost-in-the-android-emulator. 아직 모바일은 해결 X
+                    const fullUrl = `${baseUrl}${path}`;
+                    if(method === "get" || method === "delete"){
+                        return axios[method](fullUrl, {headers});
+                    } else{
+                        return axios[method](fullUrl, data, {headers});
+                    }
+                };
+
+
+                export const createAccount = form => callApi("post", "/users/", form);
+        //모바일에서는 ngrok을 통해서 휴대폰으로 접속할 수 있게 설정을 해주어야 가능
+            * ngrok 이용해서 휴대폰 접속하기: https://wayhome25.github.io/django/2017/03/18/django-ep1-setting/
+                1. ngrok을 다운받고, 압축을 해재한 후, 실행파일을 manage.py가 있는 곳과 같은 경로에 둔다.
+                2. 실행: ngrok http 8000 (Django의 default 포트가 8000, 그리고 manage.py를 첫경로에서 실행했기 때문에 ./ngrok 등이 아니라 바로 ngrok http 8000 으로 실행)
+                3. http://~~.ngrok.io -> http://localhost:8000이 생기는데 이를 복사해서 (api.js)의 baseUrl에 이용
+                    const baseUrl = "http://~~.ngrok.io/api/v1";
+
+            위 방식으로 하면, 핸드폰, emulator 모두 api서버와 통신 된다.
+            * 일정 시간 지나면 연결 끊기는 것 같음. 이럴때는 다시 url 받아서 교체해서 사용
+
+
+# 8.9 Create Account part Two
+    이번에는 state에 [loading, setLoading]을 입력해주자
+    (screens/Auth/SignUp.js)
+        export default() => {
+            const [loading, setLoading] = useState(false);
+        }
+
+    form이 검증되면 setLoading(true)로 설정
+    그리고 마지막에는 finally를 넣어서, 그 안에서 setLoading(false)를 실행 -> try가 되든, catch가 되든 finally는 작동 된다.
+    Btn에 loading이라는 prop 추가
+
+    (screens/Auth/SignUp.js)
+        import React, { useState } from "react";
+        import { StatusBar, KeyboardAvoidingView } from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+        import { isEmail } from "../../utils";
+        import { createAccount } from "../../api";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default (navigation) => {
+            const [firstName, setFirstname] = useState("");
+            const [lastName, setLastname] = useState("");
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [loading, setLoading] = useState(false);
+            const isFormValid = () =>{
+                if(
+                    firstName === "" || 
+                    lastName === "" || 
+                    email === "" || 
+                    password === ""
+                    ) {
+                    alert("All fields are required.");
+                    return false;
+                }
+                if (!isEmail(email)){
+                    alert("Please add a valid email.");
+                    return false;
+                }
+                return true;
+            };
+            const handleSubmit = async () => {
+                if (!isFormValid()){
+                    return;
+                };
+                setLoading(true);
+                try {
+                    const { status } = await createAccount({
+                        first_name: firstName,              // first_name -> (airbnb-api/users/serializers.py의 UserSerializer의 이름 형식을 그대로 가져온 것)
+                        last_name: lastName,
+                        email,
+                        username: email,
+                        password
+                    });
+                    if(status === 201){
+                        alert("Account created. Sign in please.");
+                        navigation.navigate("SignIn");
+                    }
+                    // go to Sign In
+                } catch(e){
+                    alert(e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            const dismissKeyboard = () => Keyboard.dismiss();
+            return(
+                    <DismissKeyboard>
+                        <Container>
+                            <StatusBar barStyle="light-content" />
+                                <KeyboardAvoidingView>
+                                <InputContainer>
+                                    <Input 
+                                        value={firstName} 
+                                        placeholder="First name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setFirstname}
+                                    />
+                                    <Input 
+                                        value={lastName} 
+                                        placeholder="Last name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setLastname}
+                                    />
+                                    <Input
+                                        keyboardType={"email-address"}
+                                        value={email} 
+                                        placeholder="E-mail" 
+                                        autoCapitalize="none" 
+                                        stateFn={setEmail}
+                                    />
+                                    <Input 
+                                        value={password} 
+                                        placeholder="Password" 
+                                        stateFn={setPassword}    
+                                    />
+                                </InputContainer>
+                                <Btn loading={loading} text={"Sign Up"} accent onPress={handleSubmit} />
+                                </KeyboardAvoidingView>
+                        </Container>
+                    </DismissKeyboard>
+            );
+        };
+
+    (components/Auth/Btn.js)
+        import React from "react";
+        import { ActivityIndicator, Dimensions, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import PropTypes from "prop-types"
+        import colors from "../../colors";
+
+        const { width } = Dimensions.get("screen")      
+
+        const Button = styled.View`
+            margin-bottom: 20px;
+            border: 1px solid ${props => (props.accent ? "transparent" : colors.black)};
+            border-radius: 10px;
+            padding: 15px 0px;
+            align-items: center;
+            width: ${width /2}px;           
+            background-color: ${props => (props.accent ? colors.red : "transparent")}
+            `;
+
+        const Text = styled.Text`
+            font-weight: 600;
+            font-size: 14px;
+            color: ${props => (props.accent ? "white" : "black")};
+        `;
+
+        const Btn = ({loading, onPress, text, accent = false}) => (
+            <TouchableOpacity onPress={loading ? null : onPress}>
+                <Button accent={accent}>
+                    {loading ? (
+                        <ActivityIndicator color={accent ? "white" : "black"}/>     // loading일 때 버튼이 안보이도록
+                    ) :(
+                        <Text accent={accent}>{text}</Text>
+                    )}
+                </Button>
+            </TouchableOpacity>
+        );
+
+        Btn.propTypes = {
+            onPress: PropTypes.func.isRequired,
+            text: PropTypes.string.isRequired,
+            acent: PropTypes.bool,
+            loading: PropTypes.bool
+        };
+
+        export default Btn;
+
+
+        * react navigation에 information을 같이 보내줄 수 있다. 하나의 스크린에서 다른 스크린으로
+            https://reactnavigation.org/docs/navigation-prop/
+
+            navigation.navigate(name, params) -> params(parameter)를 통해 보내줄 수 있다.
+                ex)
+                    function HomeScreen({ navigation: { navigate } }) {
+                    return (
+                        <View>
+                        <Text>This is the home screen of the app</Text>
+                        <Button
+                            onPress={() =>
+                            navigate('Profile', { names: ['Brent', 'Satya', 'Michaś'] })    # Profile로 이동시켜주는데, 오른쪽에 나열한 것들을 이동시켜준다.
+                            }
+                            title="Go to Brent's profile"
+                        />
+                        </View>
+                    );
+                    }
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import { StatusBar, KeyboardAvoidingView } from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+        import { isEmail } from "../../utils";
+        import { createAccount } from "../../api";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({navigation: { navigate } }) => {
+            const [firstName, setFirstname] = useState("");
+            const [lastName, setLastname] = useState("");
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [loading, setLoading] = useState(false);
+            const isFormValid = () =>{
+                if(
+                    firstName === "" || 
+                    lastName === "" || 
+                    email === "" || 
+                    password === ""
+                    ) {
+                    alert("All fields are required.");
+                    return false;
+                }
+                if (!isEmail(email)){
+                    alert("Please add a valid email.");
+                    return false;
+                }
+                return true;
+            };
+            const handleSubmit = async () => {
+                if (!isFormValid()){
+                    return;
+                };
+                setLoading(true);
+                try {
+                    const { status } = await createAccount({
+                        first_name: firstName,              // first_name -> (airbnb-api/users/serializers.py의 UserSerializer의 이름 형식을 그대로 가져온 것)
+                        last_name: lastName,
+                        email,
+                        username: email,
+                        password
+                    });
+                    if(status === 201){
+                        alert("Account created. Sign in please.");
+                        navigate("SignIn", { email, password });        // SignIn에 email, passwod를 보내자
+                    }
+                    // go to Sign In
+                } catch(e){
+                    alert("The email is taken");
+                } finally {
+                    setLoading(false);
+                }
+            };
+            const dismissKeyboard = () => Keyboard.dismiss();
+            return(
+                    <DismissKeyboard>
+                        <Container>
+                            <StatusBar barStyle="light-content" />
+                                <KeyboardAvoidingView>
+                                <InputContainer>
+                                    <Input 
+                                        value={firstName} 
+                                        placeholder="First name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setFirstname}
+                                    />
+                                    <Input 
+                                        value={lastName} 
+                                        placeholder="Last name" 
+                                        autoCapitalize="words" 
+                                        stateFn={setLastname}
+                                    />
+                                    <Input
+                                        keyboardType={"email-address"}
+                                        value={email} 
+                                        placeholder="E-mail" 
+                                        autoCapitalize="none" 
+                                        stateFn={setEmail}
+                                    />
+                                    <Input 
+                                        value={password} 
+                                        placeholder="Password" 
+                                        stateFn={setPassword}    
+                                    />
+                                </InputContainer>
+                                <Btn loading={loading} text={"Sign Up"} accent onPress={handleSubmit} />
+                                </KeyboardAvoidingView>
+                        </Container>
+                    </DismissKeyboard>
+            );
+        };
+
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default props => {           //다음 두줄과 같이 해주면, SignUp.js에서 "route" prop을 통해서 "params"에 email과 password 값이 console.log를 통해서 오는 것 확인 가능
+            console.log(props)
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                        <KeyboardAvoidingView behavior='position'>
+                        <InputContainer>
+                            <Input 
+                                value={username} 
+                                placeholder="Username" 
+                                autoCapitalize="none" 
+                                stateFn={setUsername}
+                            />
+                            <Input 
+                                value={password} 
+                                placeholder="Password" 
+                                stateFn={setPassword}    
+                            />
+                        </InputContainer>
+                        <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                        </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+
+        // 이제 prop에서 route에서 params를 가져오면서 그 안에 email이랑 password를 가져오자
+            Object {
+            "navigation": Object {
+                "addListener": [Function addListener],
+                "canGoBack": [Function canGoBack],
+                "dangerouslyGetParent": [Function dangerouslyGetParent],
+                "dangerouslyGetState": [Function anonymous],
+                "dispatch": [Function dispatch],
+                "goBack": [Function anonymous],
+                "isFocused": [Function isFocused],
+                "navigate": [Function anonymous],
+                "pop": [Function anonymous],
+                "popToTop": [Function anonymous],
+                "push": [Function anonymous],
+                "removeListener": [Function removeListener],
+                "replace": [Function anonymous],
+                "reset": [Function anonymous],
+                "setOptions": [Function setOptions],
+                "setParams": [Function anonymous],
+            },
+            "route": Object {
+                "key": "SignIn-cQbWvaU4QF3deWecK91dt",
+                "name": "SignIn",
+                "params": Object {
+                "email": "gkgqqkgk@naver.com",
+                "password": "432",
+                },
+            },
+            }
+            Object {
+            "navigation": Object {
+                "addListener": [Function addListener],
+                "canGoBack": [Function canGoBack],
+                "dangerouslyGetParent": [Function dangerouslyGetParent],
+                "dangerouslyGetState": [Function anonymous],
+                "dispatch": [Function dispatch],
+                "goBack": [Function anonymous],
+                "isFocused": [Function isFocused],
+                "navigate": [Function anonymous],
+                "pop": [Function anonymous],
+                "popToTop": [Function anonymous],
+                "push": [Function anonymous],
+                "removeListener": [Function removeListener],
+                "replace": [Function anonymous],
+                "reset": [Function anonymous],
+                "setOptions": [Function setOptions],
+                "setParams": [Function anonymous],
+            },
+            "route": Object {
+                "key": "SignIn-2-414T0EzZLIq14xHrDB-",
+                "name": "SignIn",
+                "params": Object {
+                "email": "fhdij@hag.com",
+                "password": "123",
+                },
+            },
+            }
+
+        export default ({route: {params: {email, password}}}) => { 이런식으로 가져오려고 하면, 그 아랫줄에 password가 이미 선언되어 있다는 오류가 있어서 다음과 같이 수정
+        export default ({route: { params }}) => {
+        그리고 useState에 params?.email을 통해 값을 가져오자
+            params?.email -> params에 값이 있을때 params.email을 가져온다는 의미 (아무것도 입력 안하고 SignUp할때를 고려한 것) - 이런걸 optional chaining 라고 하는 듯
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({route: { params }}) => {
+            const [username, setUsername] = useState(params?.email);
+            const [password, setPassword] = useState(params?.password);
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                        <KeyboardAvoidingView behavior='position'>
+                        <InputContainer>
+                            <Input 
+                                value={username} 
+                                placeholder="Username" 
+                                autoCapitalize="none" 
+                                stateFn={setUsername}
+                            />
+                            <Input 
+                                value={password} 
+                                placeholder="Password" 
+                                stateFn={setPassword}    
+                            />
+                        </InputContainer>
+                        <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                        </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+
+
+# 8.9 Log In part One
+    SignUp에서는 dispatch해줄 것이 없어서 redux를 사용하지 않았다.
+    SignIn에는 dispatch를 할것이라 redux 사용
+    token을 받을 것이다.
+    token이 Login으로 보내져서 state로 갈것이다.(redux/usersSlice.js에 있는 reducers의 login에 있는 state)      *** 매우 중요
+        두가지 옵션
+        1. component body에 SignUp.js에서 이용했던 handleSubmit 같은 함수를 작성 -> handleSubmit에서 login을 dispatch 할 수 있다.
+        2. dispatch를 내장한 함수를 만든다.
+            이렇게 만든 함수는 깔끔하고, await도 사용할 수 있을 것이다. 그리고 같은 함수안에서 dispatch도 사용 가능하고
+
+    2를 해보자?
+    
+    (api.js)
+        export const login = form => callApi("post", "/users/login", form); // 맨 아래 추가
+
+    (redux/usersSlice.js)
+        export const userLogin = (form) => async dispatch => {      // (form) => async dispatch => : 새로운 syntax - 기존에 구현하던 것들을 새로운 syntax로 간단하게 구현한다 이해하자
+
+        }
+        
+        ##
+        const userLogin = (form) => async dispatch => {
+
+        }
+        는 다음과 같다.
+        function userLogin(forms){
+            return function(dispatch){
+
+            }
+        }
+
+        form을 받는 userLogin이라는 함수는 dispatch를 받는 함수를 return 해준다.
+        dispatch를 받는 함수를 return해주는, (form을 받는) userLogin이라는 함수를 표현하는 것
+            한마디로 다른 함수를 return 해주는 함수이다. (functional programming에서 많이 보게 될 것)
+            
+        다음과 같이 실행하면 된다.(?)
+
+        userLogin(form)(dispatch);
+            redux에서 본적 있을 것이다.
+                connect(map, map)(component)
+
+    (redux/usersSlice.js)
+        import { createSlice } from "@reduxjs/toolkit"
+        import { login } from "../api";
+
+
+        const userSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: false,
+                token: null
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = true;
+                    state.token = action.payload.token;
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        })
+
+        export const {logIn, logOut} = userSlice.actions;
+
+        export const userLogin = (form) => async dispatch => {      // 이렇게 작성하는 이유는 다른 component를 안건드리고 dispatch 옆에 async await를 사용하기 위해서이다.
+            try{
+                const data = await login(form);
+                console.log(data);
+                ///dispatch login()
+            } catch(e){
+                alert(e)            // 강의에서는 alert("Wrong user/password") 나는 구체적인 오류를 보기 위해 alert(e)
+            }
+        }
+
+
+        export default userSlice.reducer;
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({route: { params }}) => {
+            const [email, setEmail] = useState(params?.email);
+            const [password, setPassword] = useState(params?.password);
+            const isFormValid = () => {
+                if(email === "" || password === ""){
+                    alert("All fields are required.");
+                    return false;
+                }
+                if(!isEmail(email)){
+                    alert("Email is invalid")
+                    return false;
+                }
+            }
+            const handleSubmit = () => {
+                if(!isFormValid()) {
+                    return;
+                }
+            };
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                        <KeyboardAvoidingView behavior='position'>
+                        <InputContainer>
+                            <Input 
+                                value={email} 
+                                placeholder="E-mail" 
+                                keyboardType="email-address"
+                                stateFn={setEmail}
+                            />
+                            <Input 
+                                value={password} 
+                                placeholder="Password" 
+                                stateFn={setPassword}    
+                            />
+                        </InputContainer>
+                        <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                        </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+
+
+# 8.11 Log In part Two
+    
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({route: { params }}) => {
+            const [email, setEmail] = useState(params?.email);
+            const [password, setPassword] = useState(params?.password);
+            const isFormValid = () => {
+                if(email === "" || password === ""){
+                    alert("All fields are required.");
+                    return false;
+                }
+                if(!isEmail(email)){
+                    alert("Email is invalid")
+                    return false;
+                }
+                return true
+            };
+            const handleSubmit = () => {            // 여기서 dispatch login을 해야한다 문제는 api의 login이랑 naming이 겹친다?? 어쨌든  api.js에서 바로 export 해주기 보다 api.js 에서 object로 만들자
+                if(!isFormValid()) {
+                    return;
+                }
+            };
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                        <KeyboardAvoidingView behavior='position'>
+                        <InputContainer>
+                            <Input 
+                                value={email} 
+                                placeholder="E-mail" 
+                                keyboardType="email-address"
+                                stateFn={setEmail}
+                            />
+                            <Input 
+                                value={password} 
+                                placeholder="Password" 
+                                stateFn={setPassword}    
+                            />
+                        </InputContainer>
+                        <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                        </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+            
+    (api.js)
+        import axios from "axios";
+
+
+        const callApi = async(method, path, data, jwt) => {
+            const headers = {
+                Authorization: jwt,
+                "Content-Type": "application/json"
+            };
+            // const baseUrl = "http://10.0.2.2:8000/api/v1";
+            // const baseUrl = "http://127.0.0.1:8000/api/v1";
+            const baseUrl = "http://843f4f597242.ngrok.io/api/v1";
+            const fullUrl = `${baseUrl}${path}`;
+            if(method === "get" || method === "delete"){
+                return axios[method](fullUrl, {headers});
+            } else{
+                return axios[method](fullUrl, data, {headers});
+            }
+        };
+
+
+        // export const createAccount = form => callApi("post", "/users/", form);      // SignIn.js에서 언급한, 바로 export 하지 말고 object로 만든 후 export 하자
+        // export const login = form => callApi("post", "/users/login", form);
+
+        export default {                                                // 이렇게 해준후에는 SignUp.js 에서 createAccount 수정 / usersSlice.js에서 login 수정
+            createAccount: form => callApi("post", "/users/", form),
+            login: form => callApi("post", "/users/login/", form),
+        }
+
+    (screens/Auth/SignUp.js)
+        import api from "../../api";
+
+        const { status } = await api.createAccount({
+
+    (redux/usersSlice.js)
+        import api from "../api"
+
+        const data = await api.login(form);
+
+    여기까지 하고 userLogin을 dispatch 해보자
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import { useDispatch } from "react-redux";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+        import { userLogin } from "../../redux/usersSlice";
+        import { isEmail } from "../../utils";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({route: { params }}) => {
+            const dispatch = useDispatch();
+            const [email, setEmail] = useState(params?.email);
+            const [password, setPassword] = useState(params?.password);
+            const isFormValid = () => {
+                if(email === "" || password === ""){
+                    alert("All fields are required.");
+                    return false;
+                }
+                if(!isEmail(email)){
+                    alert("Email is invalid")
+                    return false;
+                }
+                return true
+            };
+            const handleSubmit = () => {            // 여기서 dispatch login을 해야한다 문제는 api의 login이랑 naming이 겹친다?? 어쨌든  api.js에서 바로 export 해주기 보다 api.js 에서 object로 만들자
+                if(!isFormValid()) {
+                    return;
+                }
+                dispatch(userLogin({
+                    username: email,                    // django에서 username, password 필요
+                    password
+                }))
+            };
+
+    이렇게 해주고 save를 해주면, usersSlice.js에서 console.log(data)를 통해서 id와 token을 받는 것을 확인할 수 있다.
+    이를 이용해보자
+
+    (redux/usersSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const userSlice = createSlice({
+            name: "users",
+            initialState: {
+                isLoggedIn: false,
+                token: null
+            },
+            reducers: {
+                logIn(state, action){
+                    state.isLoggedIn = true;
+                    state.token = action.payload.token;
+                },
+                logOut(state, action){
+                    state.isLoggedIn = false;
+                    state.token = null;
+                }
+            }
+        });
+
+        export const {logIn, logOut} = userSlice.actions;
+
+        export const userLogin = form => async dispatch => {
+            try{
+                const { 
+                    data: { id, token } 
+                }= await api.login(form);
+                if (id && token) {
+                    dispatch(logIn({ token }));     // isLoggedIn을 true로 해주고, token을 저장해줄것이다. 이제 SignIn을 하면, render를 잘해주는지 확인. 어떻게? components/Gate.js에 설정해준 isLoggedIn이 잘 작동해서 LogOut 화면으로 바뀌면 됨
+                }
+            } catch(e){
+                alert(e);            
+            }
+        }
+
+
+        export default userSlice.reducer;
+
+    이제 SignIn을 해주고 React Native Debugger를 켜보자
+    실행, Ctrl+t, 모바일(emulator)에서 Debug Remote JS 실행해보자
+    State > userReducer 에서 isLoggedIn: true이고 token도 저장되었음을 확인 가능
+
+    여기까지해서 createAccount와 login을 만들어 낸것이다!!
+
+    이제 main navigator를 만들자
+
+    (screens/Main) 폴더를 만들고 Main 안에 Explore.js, Map.js, Profile.js, Saved.js 생성
+
+    (screens/Main/Saved.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default () => (
+            <Container>
+                <Text>Saved</Text>      // 방금 만들어준 다른곳에는 이부분만 수정해주면 됨
+            </Container>
+        );
+
+## EXPLORE SCREEN
+
+# 9.0 Main Navigation part One
+
+    npm install @react-navigation/bottom-tabs
+
+
+    (nvigation/Main.js) 생성
+
+        import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+        import Explore from "../screens/Main/Explore";      // Tip: 키워드 입력하고 엔터해서 자동불러오기 하는데, 안되면 해당 파일을 열어주면 작동 될 것임
+        import MapScreen from "../screens/Main/Map";
+        import Profile from "../screens/Main/Profile";
+        import Saved from "../screens/Main/Saved";
+
+        const Main = createBottomTabNavigator();
+
+        export default () => <Main.Navigator>
+            <Main.Screen name="Explore" component={Explore}></Main.Screen>
+            <Main.Screen name="Saved" component={Saved}></Main.Screen>
+            <Main.Screen name="Map" component={MapScreen}></Main.Screen>
+            <Main.Screen name="Profile" component={Profile}></Main.Screen>
+        </Main.Navigator>
+
+    (components/Gate.js)
+        import React from "react";
+        import { View, Text, TouchableOpacity } from "react-native";
+        import { useDispatch, useSelector } from "react-redux";
+        import { logIn, logOut } from "../redux/usersSlice";
+        import Auth from "../navigation/Auth";
+        import { NavigationContainer } from "@react-navigation/native";
+        import Main from "../navigation/Main";
+
+
+        export default () => {
+            const { isLoggedIn } = useSelector(state => state.usersReducer);
+            const dispatch = useDispatch();
+            return (
+                <NavigationContainer>   
+                    {isLoggedIn ? <Main /> : <Auth />}
+                </NavigationContainer>
+            );
+        };
+
+    여기까지 하면 우선 navigation이 작동하는 것 확인 가능. 이제 더 꾸며보자
+
+    icon을 꾸미는 것에 대해서 자세히 말해보자면
+        screenOptions가 함수가 될수 있다. screenOptions는 route를 포함하고 있다.
+            즉, 현재 주소 위치가 어디인지 알 수 있다.
+
+    (navigation/Main.js)
+        import React from "react";
+        import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+        import Explore from "../screens/Main/Explore";
+        import MapScreen from "../screens/Main/Map";
+        import Profile from "../screens/Main/Profile";
+        import Saved from "../screens/Main/Saved";
+        import colors from "../colors";
+
+        const Main = createBottomTabNavigator();
+
+        export default () => (
+        <Main.Navigator 
+            tabBarOptions={{
+                activeTintColor: colors.red,
+                labelStyle: {
+                textTransform: "uppercase",
+                fontWeight: "bold"
+                }
+            }}
+            screenOptions = {({route}) =>({
+                tabBarIcon: ({focused}) => {
+                    
+                }
+            })}
+            >
+            <Main.Screen name="Explore" component={Explore}></Main.Screen>
+            <Main.Screen name="Saved" component={Saved}></Main.Screen>
+            <Main.Screen name="Map" component={MapScreen}></Main.Screen>
+            <Main.Screen name="Profile" component={Profile}></Main.Screen>
+        </Main.Navigator>
+        );
+
+
+# 9.1 Main Navigation part Two
+
+    (utils.js)
+        import { Platform } from "react-native";
+
+        export const isAndroid = () => Platform.OS === "android";
+
+        export const isEmail = (email) => {
+            const regEx =  /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+            return regEx.test(email);
+        };
+
+    위와 같이 해도 작동하는데, 계속 사용할 거니까 아래와 같이 함수로 만들어주자
+    
+    (utils.js)
+        import { Platform } from "react-native";
+
+        export default {
+            isAndroid: () => Platform.OS === "android",
+            isEmail: (email) => {
+                const regEx =  /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+                return regEx.test(email);
+            }
+        }
+
+    (components/Auth/BackBtn.js)
+        import React from "react";
+        import { Platform } from "react-native";
+        import styled from "styled-components/native";
+        import { Ionicons } from "@expo/vector-icons";
+        import utils from "../../utils";
+
+
+        const Container = styled.View`
+            padding-left:20px;
+        `
+
+        export default () => <Container><Ionicons 
+        name={utils.isAndroid() ? "md-arrow-back-circle": "md-arrow-back"}
+        size={28} 
+        /></Container>
+
+    SignUp.js, SignIn.js 에 있는 isEmail도 utils 를 호출해주고 utils.isEmail로 변경
+
+
+# 9.2 Rooms Slice and Cleanup
+    
+    room을 request 해보자
+    
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    state.explore.rooms.push(action.payload.rooms);
+                    state.explore.page = action.payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export default roomsSlice.reducer;
+
+    (redux/rootReducer.js)
+        import { combineReducers } from "redux";
+        import usersReducer from "./usersSlice";
+        import roomsReducer from "./roomsSlice";
+
+        export default combineReducers({
+            usersReducer,
+            roomsReducer
+        })
+
+    (api.js)
+        import axios from "axios";
+
+
+        const callApi = async(method, path, data, jwt) => {
+            const headers = {
+                Authorization: jwt,
+                "Content-Type": "application/json"
+            };
+            // const baseUrl = "http://10.0.2.2:8000/api/v1";
+            // const baseUrl = "http://127.0.0.1:8000/api/v1";
+            const baseUrl = "http://1d95240da570.ngrok.io/api/v1";
+            const fullUrl = `${baseUrl}${path}`;
+            if(method === "get" || method === "delete"){
+                return axios[method](fullUrl, {headers});
+            } else{
+                return axios[method](fullUrl, data, {headers});
+            }
+        };
+
+
+        export default {                                              
+            createAccount: form => callApi("post", "/users/", form),
+            login: form => callApi("post", "/users/login/", form),
+            rooms: page => callApi("get", `/rooms/?page${page}`)
+        }
+
+    * 본격적으로 api를 활용하기 전에 구조를 정리해보자 (logic과 design을 구분하는 작업)
+    우선 SignIn
+    (screens/Auth/SignIn 생성) 그 안에 index.js, SignInContainer.js, SignInPresenter.js 생성
+    SignIn.js 중 SignInContainer.js에는 logic 만 옮기고 SignInPresenter를 호출, return, SignInPresenter.js에는 design(ui)만 옮기기
+    
+    (screens/Auth/SignIn/SignInContainer)
+        import React, { useState } from "react";
+        import { useDispatch } from "react-redux";
+        import styled from "styled-components/native";
+        import { userLogin } from "../../../redux/usersSlice";
+        import utils from "../../../utils";
+        import SignInPresenter from "./SignInPresenter";
+
+
+        export default ({route: { params }}) => {
+            const dispatch = useDispatch();
+            const [email, setEmail] = useState(params?.email);
+            const [password, setPassword] = useState(params?.password);
+            const isFormValid = () => {
+                if(email === "" || password === ""){
+                    alert("All fields are required.");
+                    return false;
+                }
+                if(!utils.isEmail(email)){
+                    alert("Email is invalid");
+                    return false;
+                }
+                return true;
+            };
+            const handleSubmit = () => {            // 여기서 dispatch login을 해야한다 문제는 api의 login이랑 naming이 겹친다?? 어쨌든  api.js에서 바로 export 해주기 보다 api.js 에서 object로 만들자
+                if(!isFormValid()) {
+                    return;
+                }
+                dispatch(
+                    userLogin({
+                        username: email,                    // django에서 username, password 필요
+                        password
+                    })
+                );
+            };
+            return <SignInPresenter email={email} setEmail={setEmail} password={password} setPassword={setPassword} handleSubmit={handleSubmit} />
+        };
+
+    (screens/Auth/SignIn/SignInPresenter.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../../components/Auth/Btn";
+        import Input from "../../../components/Auth/Input";
+        import DismissKeyboard from "../../../components/DismissKeyboard";
+
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default ({ email, setEmail, password, setPassword, handleSubmit }) => {
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                        <KeyboardAvoidingView behavior='position'>
+                        <InputContainer>
+                            <Input 
+                                value={email} 
+                                placeholder="E-mail" 
+                                keyboardType="email-address"
+                                stateFn={setEmail}
+                            />
+                            <Input 
+                                value={password} 
+                                placeholder="Password" 
+                                stateFn={setPassword}    
+                            />
+                        </InputContainer>
+                        <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                        </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+
+    (screens/Auth/SignIn/index.js)
+        import SignInContainer from "./SignInContainer";
+
+        export default SignInContainer
+
+    이렇게 한 후 기존에 있던 SignIn.js 삭제해주면 screens/Auth/SignIn에 있는 index.js 를 기본으로 가져온다.
+    SignUp.js에도 똑같이 적용해줄 것이다.
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default () => (
+            <Container>
+                <Text>Explore</Text>
+            </Container>
+        );
+
+    (screens/Main/Explore/ExploreContainer.js)
+        import React from "react";
+        import ExplorePresenter from "./ExplorePresenter";
+
+        export default () => <ExplorePresenter />;
+
+    (screens/Main/Explore/index.js)
+        import ExploreContainer from "./ExploreContainer";
+
+        export default ExploreContainer;
+
+    
+# 9.3 Fetching Rooms
+    Explore에 하고싶은 것이 무엇이냐면, component가 mount 될 때 data를 fetch 하도록 하자(room을 get하자)
+
+    (screens/Main/Explore/index.js)
+        import { connect } from "react-redux";
+        import ExploreContainer from "./ExploreContainer";
+        import { getRooms } from "../../../redux/roomsSlice";
+
+        function mapDispatchToProps(dispatch){
+            return {
+                getRooms: () => dispatch(getRooms())
+            }
+        }
+
+        export default connect(null, mapDispatchToProps)(ExploreContainer);
+
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    state.explore.rooms.push(action.payload.rooms);
+                    state.explore.page = action.payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data} = await api.rooms();
+                console.log(data);
+            } catch(e) {
+
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    (screens/Main/Explore/ExploreContainer.js)
+        import React from "react";
+        import ExplorePresenter from "./ExplorePresenter";
+
+        export default props => {
+            console.log(props);
+            return <ExplorePresenter />;
+        };
+
+    이렇게 해주고 props가 출력되는 것을 보면, "getRooms"라는 함수가 있는 것을 알 수 있다. 이를 이제 이용
+
+    (screens/Main/Explore/ExploreContainer.js)
+        import React, { useEffect } from "react";
+        import ExplorePresenter from "./ExplorePresenter";
+
+        export default ({ getRooms }) => {
+            useEffect(() => {               // component mount가 useEffect를 사용할 때마다 execute 될 것이다.
+                getRooms();                 // 이렇게 하면, 우리는 rooms들의 첫 묶음들을 fetch 하는 것이다.
+            }, []);
+            return <ExplorePresenter />;
+        };
+
+    (screens/Main/Explore/index.js)
+        import ExploreContainer from "./ExploreContainer";
+        import { connect } from "react-redux";
+        import { getRooms } from "../../../redux/roomsSlice";
+
+
+        function mapDispatchToProps(dispatch){
+            return {
+                getRooms: () => dispatch(getRooms())
+            };
+        }
+
+        function mapStateToProps(state){
+            console.log(state.roomsReducer);
+            return {};
+        }
+
+        export default connect(mapStateToProps, mapDispatchToProps)(ExploreContainer);
+
+        이렇게 해주면 console.log에 explore 나타남. 이를 이용
+
+    (screens/Main/Explore/index.js)
+        import ExploreContainer from "./ExploreContainer";
+        import { connect } from "react-redux";
+        import { getRooms } from "../../../redux/roomsSlice";
+
+
+        function mapDispatchToProps(dispatch){
+            return {
+                getRooms: () => dispatch(getRooms())
+            };
+        }
+
+        function mapStateToProps(state){
+            return state.roomsReducer.explore;
+        }
+
+        export default connect(mapStateToProps, mapDispatchToProps)(ExploreContainer);
+
+    (screens/ExploreContainer.js)
+        import React, { useEffect } from "react";
+        import ExplorePresenter from "./ExplorePresenter";
+
+        export default ({ getRooms, rooms, page }) => {
+            useEffect(() => {               
+                getRooms();                 
+            }, []);
+            return <ExplorePresenter rooms={rooms} />;
+        };
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    state.explore.rooms.push(action.payload.rooms);
+                    state.explore.page = action.payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data: {results}} = await api.rooms();
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page: 1
+                }));
+            } catch(e) {
+                // console.log(e)
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    이렇게 해주고 React Native Debugger를 보자
+        state-roomsReducer-explore-rooms .. 뭐 더 설명하려고 했는데 아직 오류가 있음
+        다음 강의에서...
+
+
+# 9.4 Duplicate Bugfix
+    
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    state.explore.rooms.push(action.payload.rooms);     // rooms는 array 인데, rooms에 넣어주는 results가 array이다. array에 array를 넣어주는 것은 우리가 원하던 것이 아님
+                    state.explore.page = action.payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data: {results}} = await api.rooms();
+                dispatch(setExploreRooms({
+                    rooms: results,             // results는 array이다.
+                    page: 1
+                }));
+            } catch(e) {
+                // console.log(e)
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+        rooms는 array 인데, rooms에 넣어주는 results가 array이다. array에 array를 넣어주는 것은 우리가 원하던 것이 아님, 이제 이를 고쳐볼 것이다
+
+    React Native Debugger 에서 우클릭해서 Log AsyncStorage content 확인 가능
+    현재 state들을 망쳐놔서 아직은 활용이 어려움.
+    log out을 하기 위해 Debugger에서 우클릭해서 Clear AsyncStorage 해준다 -> save 해서 새로고침하면 log out 되어있다.
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    action.payload.rooms.forEach(room => state.explore.rooms.push(room))    // rooms payload에 있는 모든 room을 state로 push
+                    // state.explore.rooms.push(action.payload.rooms);
+                    state.explore.page = action.payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data: {results}} = await api.rooms();
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page: 1
+                }));
+            } catch(e) {
+                console.log(e)
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    * login screen에 default value를 설정해주자 - SignInContainer에 default value를 설정해서 sign in 을 바로 할 수 있도록 해보자.
+
+    (screens/Auth/SignInContainer.js)
+        export default ({route: { params }}) => {
+            const dispatch = useDispatch();
+            const [email, setEmail] = useState(params?.email || "taltalrealty@naver.com");
+            const [password, setPassword] = useState(params?.password || "52848625a");
+
+    이제 login을 하고 Debugger를 보면 rooms가 제대로 나온다...?
+    이것이 왜 중요하냐면,
+    우리의 핸드폰에 database가 있는 것과 같아서 우리의 핸드폰에 무엇이 들어가는지 조심할 필요가 있다
+     -> state.explore.rooms를 사용하는 대신에 다음과 같이 해보자
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { explore: {rooms}} = state;
+                    const { payload } = action;
+                    payload.rooms.forEach(room => rooms.push(room))     // 일단 체크할 것이 있는데 id를 가지고 있는 room이 입력되고 있고, room들의 database에 존재하는지를
+                    // action.payload.rooms.forEach(room => state.explore.rooms.push(room))
+                    // state.explore.rooms.push(action.payload.rooms);
+                    state.explore.page = payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data: {results}} = await api.rooms();
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page: 1
+                }));
+            } catch(e) {
+                console.log(e)
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    // 일단 체크할 것이 있는데 id를 가지고 있는 room이 입력되고 있고, room들의 database에 존재하는지를 -> 있으면 저장하지를 않을 것이다.
+    // 또는 array.find 라는 array의 method를 이용 해보자..?
+        array.find: array 안의 object를 찾아주는 method
+        array.find method를 활용해서, 기존에 존재하는 방은 저장하지 않고, 새로운 방만 저장하도록 짜보자
+    
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { explore } = state;
+                    const { payload } = action;
+                    payload.rooms.forEach(payloadRoom => {
+                        const exists = explore.rooms.find(savedRoom => savedRoom.id === payloadRoom.id)
+                    });
+                    if(!exists){
+                        explore.rooms.push(payloadRoom);
+                    }
+                    state.explore.page = payload.page;
+                }
+            }
+        });
+
+        const { setExploreRooms } = roomsSlice.actions;
+
+        export const getRooms = () => async dispatch => {
+            try {
+                const {data: {results}} = await api.rooms();
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page: 1
+                }));
+            } catch(e) {
+                console.log(e)
+            }
+        }
+
+        export default roomsSlice.reducer;
+                    
+
+    * 위처럼 기존에 있는 것은 저장하지 않도록 하는 것은 중요하다
+        내가 내 휴대폰에 뭐가 있는 것을 안다는 것은, 즉 self-contained database 라는 걸 알면, API에 의존하지 않을 수 있다.
+        API는 그저 새로운 data가 있는지 확인하는 용도. 이미 data가 존재한다면 duplicate 하지 않을 것이다.
+    * react application의 front-end를 작업할 때 우리는 대부분 그냥 data를 get하고 보여준다.
+      user가 다시 방문할 때에는 data를 다시 받고 보여준다.
+      우리는 data를 save 하는게 아니다. 핸드폰에는 JavaScript database인 state가 있다.
+      그리고 이것들은 변하지 않는다.(?)
+      override하지 않도록 해야한다. 그냥 data를 save 하지 않고 더 많은 data가 존재하지 않는지 확인해야 한다.
+       
+
+# 9.5 RoomCard part One
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            console.log(rooms);
+            return(
+            <Container>
+                <Text>Explore</Text>
+            </Container>
+            );
+        };
+
+    위와 같이 해주면 room이 console에 나오는 것 확인 이를 이용해서 해보자
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator } from "react-native";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            if (rooms.length === 0) {       // 즉, user가 처음 방문했을 떄
+                return (
+                <Container>
+                    <ActivityIndicator color ="blakc" />
+                </Container>);
+            } else {
+                return (
+                    <Container>
+                        <Text>Explore</Text>
+                    </Container>
+                )
+            }
+        };
+
+    위를 좀 더 다듬어서
+    
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator } from "react-native";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? <ActivityIndicator color="black" /> : <Text>Hello</Text>}
+            </Container>
+            );
+        };
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator } from "react-native";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                rooms.map(room => <Text>{room.name}</Text>)          이렇게 해서 room.name들이 표현되어야 하는데, 나는 room을 만들어줬는데도 안나타나는듯.... 왜?? 강의 중에 roomsSlice.js에서 rooms: [results] 라고 표현된 부분 있는데, results는 이미 array이기 때문에 rooms: results 라고 해야한다. array안에 array를 넣어서 안나온 것임 
+                // <Text>나</Text>
+                )}
+            </Container>
+            );
+        };
+
+    (components/Roomcard.js)
+        import react from "react";
+        import Pt from "prop-types";
+        import styled from "styled-components/native";
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => null
+
+        RoomCard.protoTypes = {
+            id: Pt.number.isRequired,
+            isFav: Pt.bool.isRequired,
+            isSuperHost: Pt.bool.isRequired,
+            photos: Pt.arrayOf(
+                Pt.shape({
+                file: Pt.string
+            })
+            ),
+            name: Pt.string.isRequired,
+            price: Pt.number.isRequired
+        };
+    
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator } from "react-native";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                rooms.map(room => (
+                    <RoomCard 
+                        key={room.id} 
+                        name={room.name} 
+                        price={room.price} 
+                        photos={room.photos}
+                        id={room.id} 
+                        isFav = {room.is_fav}
+                        isSuperHost={room.user} 
+                        />
+                    ))
+                )}
+            </Container>
+            );
+        };
+
+
+# 9.6 RoomCard part Two
+
+    (components/RoomCard.js)
+        import react from "react";
+        import Pt from "prop-types";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            width: 100%;
+            margin-bottom: 50px;
+            align-items: flex-start;
+        `;
+
+        const Name = styled.Text`
+            font-size: 18px;
+            font-weight: 300;
+            margin-bottom: 7px;
+        `;
+
+        const PriceContainer = styled.View`
+            flex-direction: row;
+        `;
+
+        const PriceText = styled.Text`
+            font-size: 16px;
+        `;
+
+        const PriceNumber = styled.Text`
+            font-weight: 600;
+            font-size: 16px;
+        `;
+
+        const Superhost = styled.View`
+            padding: 3px 5px;
+            border: 1px solid black;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        `;
+
+        const SuperHostText = styled.Text`
+            text-transform: uppercase;
+            font-weight: 500;
+            font-size: 10px;
+        `;
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => {
+            <Container>
+                {isSuperHost ? (
+                    <Superhost>
+                        <SuperHostText>Superhost</SuperHostText>
+                    </Superhost>
+                    ) : null}
+                <Name>{name}</Name>
+                <PriceContainer>
+                    <PriceNumber>{price}</PriceNumber><PriceText>/night</PriceText>
+                </PriceContainer>
+            </Container>
+        }
+
+        RoomCard.protoTypes = {
+            id: Pt.number.isRequired,
+            isFav: Pt.bool.isRequired,
+            isSuperHost: Pt.bool.isRequired,
+            photos: Pt.arrayOf(
+                Pt.shape({
+                file: Pt.string
+            })
+            ),
+            name: Pt.string.isRequired,
+            price: Pt.number.isRequired
+        };
+
+        export default RoomCard;
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator, ScrollView } from "react-native";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                <ScrollView 
+                    style={{ width: "100%", marginTop:120 }} 
+                    contentContainerStyle={{ paddingHorizontal: 15 }}
+                >
+                    {
+                    rooms.map(room => (
+                        <RoomCard 
+                            key={room.id} 
+                            name={room.name} 
+                            price={room.price} 
+                            photos={room.photos}
+                            id={room.id} 
+                            isFav = {room.is_fav}
+                            isSuperHost={room.user} 
+                            />
+                        ))
+                    }
+                </ScrollView>
+                // <Text>나</Text>
+                )}
+            </Container>
+            );
+        };
+
+    
+# 9.7 Photo Slider
+
+    swiper 설치
+    https://github.com/leecade/react-native-swiper
+    버전에 따라 맞게 설치
+
+    나는: $ npm i react-native-swiper --save
+    
+    (App.js)
+        ...
+        const loadAssets = () => {
+            const images = [
+            require("./assets/loginBg.jpg"),
+            require("./assets/roomDefault.jpg"),            // 사진이 없는 room을 위한 default 사진을 저장해서 경로에 추가
+        "https://blog.kakaocdn.net/dn/95jT7/btqQCAwEbDf/m30lmOx9xg7fKaPzQsFfJ1/img.jpg"
+        ];
+        ...
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator, ScrollView } from "react-native";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={{ width: "100%", marginTop:120 }} 
+                    contentContainerStyle={{ paddingHorizontal: 15 }}
+                >
+                    {
+                        rooms.map(room => (
+                            <RoomCard 
+                                key={room.id} 
+                                name={room.name}
+                                price={room.price} 
+                                photos={room.photos}
+                                id={room.id}
+                                isFav={room.is_fav}
+                                isSuperHost={room.user.superhost}
+                                />
+                        ))
+                    }
+                </ScrollView>
+                )}
+            </Container>
+            );
+        };
+
+    (components/RoomCard.js)
+
+        import React from "react";
+        import Pt from "prop-types";
+        import styled from "styled-components/native";
+        import { Dimensions } from "react-native";
+        import Swiper from 'react-native-swiper'
+
+        const {width, height} = Dimensions.get("screen");
+
+        const Container = styled.View`
+            margin-bottom: 25px;
+            align-items: flex-start;
+        `;
+
+        const Name = styled.Text`
+            font-size: 18px;
+            font-weight: 300;
+            margin-bottom: 7px;
+        `;
+
+        const PriceContainer = styled.View`
+            flex-direction: row;
+        `;
+
+        const PriceText = styled.Text``;
+
+        const PriceNumber = styled.Text`
+            font-weight: 900;
+        `;
+
+        const Superhost = styled.View`
+            padding: 3px 5px
+            border: 1px solid black;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        `;
+
+        const SuperhostText = styled.Text`
+            text-transform: uppercase;
+            font-weight: 500;
+            font-size: 10px;
+        `;
+
+        const PhotosContainer = styled.View`
+            margin-bottom: 10px;
+            overflow: hidden;
+            background-color: red;
+            width: 100%;
+            height: ${height/4}px;
+        `;
+
+
+        const SlideImage = styled.Image`
+        width: 100%;
+        height: 100%;
+        `;                          // require로 내부 폴더에서 가져오면 이거 안해도 이미지가 보이지만, source로 온라인 등에서 이미지 가져올때는 이미지 크기 설정안해주면 나타나지를 않는다.
+
+
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price,}) => {
+            // console.log(photos)
+            console.log(typeof photos)              // photos가 array(? object?)가 아니면 아래 코드들이 실행이 안된다. photos의 length가 없다고 나오면 거의 이 문제. 꼭 확인
+            return (
+                <Container>
+                <PhotosContainer>
+                    {photos.length === 0 ? (
+                        <SlideImage 
+                            resizeMode="repeat" 
+                            source={require("../assets/roomDefault.jpg")} 
+                        />
+                        ) : (
+                            <Swiper>
+                                {photos.map(photo => (
+                                    <SlideImage key={photo.id} source={{ uri: photo.file }} />
+                                ))}
+                            </Swiper>
+                        )}
+                </PhotosContainer>
+                {isSuperHost ? (
+                    <Superhost>
+                        <SuperhostText>Superhost</SuperhostText>
+                    </Superhost>
+                    ) : null}
+                <Name>{name}</Name>
+                <PriceContainer><PriceNumber>{price}</PriceNumber><PriceText>/night</PriceText></PriceContainer>
+            </Container>
+            );
+        };
+
+        RoomCard.propTypes = {
+            id: Pt.number,
+            isFav: Pt.bool.isRequired,
+            isSuperHost: Pt.bool.isRequired,
+            photos: Pt.arrayOf(
+                Pt.shape({
+                    file: Pt.string
+                })
+            ),
+            name: Pt.string.isRequired,
+            price: Pt.number.isRequired
+        };
+
+        export default RoomCard
+
+    위와 같이 했는데, image를 인식 못하는 경우
+    우리 이미지가 webp라서 안되는 것일수 있다 함.
+    python pillow를 통해서 image를 webp에서 jpeg로 바꿔보자.
+
+    manage.py가 있는 곳에 webp2jpeg.py를 만들어서 다음과 같이 작성
+
+    (airbnb-api/webp2jpeg.py)
+
+        from PIL import Image
+
+        image_number = 31
+
+        for image in range(image_number):
+            path = f"./uploads/room_photos/{image+1}.webp"
+            im = Image.open(path)
+            im.save(f"./uploads/room_photos/{image+1}.webp", "jpeg")    # 우리의 server와 database의 path가 ./uploads/room_photos 로 지정되어 있기 때문에, path를 바꿔서 저장하지 않는다.
+
+    실행할 때는 python webp2.jpeg.py 로 실행하면 됨
+    잘 작동하는지 확인하기 위해서 print(im) 등 넣어보면 됨
+
+
+# 9.9 Bugfix
+    github.com/leecade/react-native-swiper 에서 pagination을 보면, 다양한 기능들을 볼 수 있다. autoplay를 넣으면 사진 자동 넘김
+
+    (components/RoomCard.js)
+    ...
+    <Swiper 
+        paginationStyle={{ marginBottom: -15 }}
+        dotColor = {"gray"}
+        activeDotColor = {"white"}
+        >
+        {photos.map(photo => (
+            <SlideImage key={photo.id} source={{ uri: photo.file }} />
+        ))}
+    </Swiper>
+    ...
+
+    좀더 꾸며보자
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding-horizontal: 15px;
+        `;
+
+        const Text = styled.Text``;
+
+        const FakeBar = styled.View`
+            height: 40px;
+            width: 100%;
+            background-color: white;
+            margin: 40px 0px 10px 0px;
+            box-shadow: 1px 5px 5px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            justify-content: center;
+            padding-left: 10px;
+        `;  // 나는 box-shadow 안되는 듯..
+
+        const FakeText = styled.Text`
+            font-size: 16px;
+        `;
+
+        export default ({rooms}) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                <>
+                <FakeBar>
+                    <FakeText>Search..</FakeText>
+                </FakeBar>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={{ width: "100%" }} 
+                    contentContainerStyle={{ paddingTop: 30 }}
+                >
+                    {
+                        rooms.map(room => (
+                            <RoomCard 
+                                key={room.id} 
+                                name={room.name}
+                                price={room.price} 
+                                photos={room.photos}
+                                id={room.id}
+                                isFav={room.is_fav}
+                                isSuperHost={room.user.superhost}
+                                />
+                        ))
+                    }
+                    <TouchableOpacity>
+                        <Text>Load More</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+                </>
+                )}
+            </Container>
+            );
+        };
+
+# 9.10 Load More
+    
+    (redux/roomsSlice.js)
+        ...
+        export const getRooms = (page) => async dispatch => {       // getRoos는 page argument와 함께 호출해야 함
+            try {
+                const {data: {results}} = await api.rooms(page);    // api.rooms도 page argument와 함께 호출해야 함
+                dispatch(setExploreRooms({
+                    rooms: results
+                }));
+            } catch(e) {
+                console.warn(e);
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    (screens/Main/Explore/ExploreContainer.js)
+        ...
+        export default ({ getRooms, rooms, page increasePage}) => {
+            useEffect(() => {               
+                getRooms(page);             
+            }, [page]);
+            return <ExplorePresenter rooms={rooms} increasePage />; 
+        };
+
+    (screens/Main/Explore/index.js)
+        ...
+        function mapDispatchToProps(dispatch){
+            return {
+                getRooms: page => dispatch(getRooms(page))
+            };
+        }
+        ...
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { explore } = state;
+                    const { payload } = action;
+                    payload.rooms.forEach(payloadRoom => {
+                        const exists = explore.rooms.find(
+                            savedRoom => savedRoom.id === payloadRoom.id
+                            );
+                        if(!exists){
+                            explore.rooms.push(payloadRoom);
+                        }
+                    });
+                },
+                increasePage(state, action){
+                    state.explore.page += 1;
+                }
+            }
+        });
+
+        export const { setExploreRooms, increasePage } = roomsSlice.actions;
+
+        export const getRooms = (page) => async dispatch => {       // getRoos는 page argument와 함께 호출해야 함
+            try {
+                const {data: {results}} = await api.rooms(page);    // api.rooms도 page argument와 함께 호출해야 함
+                dispatch(setExploreRooms({
+                    rooms: results
+                }));
+            } catch(e) {
+                console.warn(e);
+            }
+        }
+
+        export default roomsSlice.reducer;
+
+    (screens/Main/Explore/index.js)
+        import ExploreContainer from "./ExploreContainer";
+        import { connect } from "react-redux";
+        import { getRooms, increasePage } from "../../../redux/roomsSlice";
+
+
+        function mapDispatchToProps(dispatch){
+            return {
+                getRooms: page => dispatch(getRooms(page)),
+                increasePage: () => dispatch(increasePage())
+            };
+        }
+
+        function mapStateToProps(state){
+            return state.roomsReducer.explore;
+        }
+
+        export default connect(mapStateToProps, mapDispatchToProps)(ExploreContainer);
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        ...
+        export default ({rooms, increasePage }) => {
+        ...
+                    <TouchableOpacity onPress={increasePage}>
+                        <Text>Load More</Text>
+                    </TouchableOpacity>
+        ...
+
+
+    분명히 불러와지는거 같기도 한데, 안됨....
+
+
+# 9.11 Load More Bug Fix
+    (screens/Main/Explore/ExploreContainer.js)
+        import React, { useEffect, useState } from "react";
+        import ExplorePresenter from "./ExplorePresenter";
+
+        export default ({ getRooms, rooms,}) => {
+            const [page, setPage] = useState(1);
+            const increasePage = () => setPage(prev => prev +1);
+            useEffect(() => {               
+                getRooms(page);             
+            }, [page]);
+            return <ExplorePresenter rooms={rooms} increasePage={increasePage} />; // ExplorePresenter에 rooms를 보낸다? 하지만 아직 console.log를 보면, rooms이 비어있는 array이다. roomsSlice.js 에서 const { data } 부분을 끝내지 않았기 때문 -> /api/v1/rooms/를 보면 count, next, previous, results 값이 있는데, results 값을 받아야 한다.
+        };
+
+    위와 같이 하는건 redux로부터 increasePage를 사용하지 않고 state로부터 increasePage를 사용하는 것이다.
+    큰 문제는 없는데. Load More 하고 새로 들어갔을때 기본적으로 Load한 페이지들이 모두 나와있으면서도 Load More를 해도 새로운 창이 나타나지 않는 오류가 있다. 남아있는 페이지만큼 Load More 해준 후에 새 페이지 나온다 함
+    이를 고치는 여러 방법이 있는데 강의에서는 state를 화면뒤에서 refresh 시키는 방법을 알려준다 함
+
+    (screens/Main/Explore/ExploreContainer.js)
+
+    import React, { useEffect } from "react";
+    import ExplorePresenter from "./ExplorePresenter";
+
+    export default ({ getRooms, rooms, page, increasePage }) => {
+        useEffect(() => {
+            getRooms(1);
+        }, [])
+        useEffect(() => {               
+            getRooms(page);             
+        }, [page]);
+        return <ExplorePresenter rooms={rooms} increasePage={increasePage} />; 
+    };
+    
+    원래대로 해준 후에
+
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { explore } = state;
+                    const { payload } = action;
+                if(payload.page === 1){
+                    state.explore.rooms = payload.rooms;
+                    state.explore.page = 1;
+                } else{
+                    payload.rooms.forEach(payloadRoom => {
+                        const exists = explore.rooms.find(
+                            savedRoom => savedRoom.id === payloadRoom.id
+                            );
+                        if(!exists){
+                            explore.rooms.push(payloadRoom);
+                        }
+                    });
+                }
+                },
+                increasePage(state, action){
+                    state.explore.page += 1;
+                }
+            }
+        });
+
+        export const { setExploreRooms, increasePage } = roomsSlice.actions;
+
+        export const getRooms = page => async dispatch => {       // getRoos는 page argument와 함께 호출해야 함
+            try {
+                const {data: {results}} = await api.rooms(page);    // api.rooms도 page argument와 함께 호출해야 함
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page,
+                }));
+            } catch(e) {
+                console.warn(e);
+            }
+        };
+
+        export default roomsSlice.reducer;
+
+
+# 9.12 Button and Realm
+    전 강의서 하던걸 좀 더 다듬은 것
+    (redux/roomsSlice.js)
+        import { createSlice } from "@reduxjs/toolkit";
+        import api from "../api";
+
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { payload } = action;
+                if(payload.page === 1){
+                    state.explore.rooms = payload.rooms;
+                    state.explore.page = 1;
+                } else{
+                    state.explore.rooms = [...state.explore.rooms, ...payload.rooms];
+                }
+                },
+                increasePage(state, action){
+                    state.explore.page += 1;
+                }
+            }
+        });
+
+        export const { setExploreRooms, increasePage } = roomsSlice.actions;
+
+        export const getRooms = page => async dispatch => {       // getRoos는 page argument와 함께 호출해야 함
+            try {
+                const {data: {results}} = await api.rooms(page);    // api.rooms도 page argument와 함께 호출해야 함
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page,
+                }));
+            } catch(e) {
+                console.warn(e);
+            }
+        };
+
+        export default roomsSlice.reducer;
+
+    버튼을 꾸며보자
+    (screens/Main/Explore/ExplorePresenter.js)
+        import React from "react";
+        import { ActivityIndicator, ScrollView, TouchableOpacity, Text } from "react-native";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding-horizontal: 15px;
+        `;
+
+
+        const FakeBar = styled.View`
+            height: 40px;
+            width: 100%;
+            background-color: white;
+            margin: 80px 0px 10px 0px;
+            box-shadow: 1px 5px 5px rgba(200, 200, 200, 0.5);
+            border-radius: 7px;
+            justify-content: center;
+            padding-left: 10px;
+        `;  // 나는 box-shadow 안되는 듯..
+
+        const FakeText = styled.Text`
+            font-size: 16px;
+            font-weight: 300;
+        `;
+
+        const LoadMore = styled.View`
+            width: 100%;
+            padding: 10px 10px;
+            align-items: center;
+            background-color: #006a70;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        `;
+
+        const LoadMoreText = styled.Text`
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+        `;
+
+        export default ({ rooms, increasePage }) => {
+            return(
+            <Container>
+                {rooms.length === 0 ? (
+                <ActivityIndicator color="black" />
+                ) : (
+                <>
+                <FakeBar>
+                    <FakeText>Search..</FakeText>
+                </FakeBar>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={{ width: "100%" }} 
+                    contentContainerStyle={{ paddingTop: 30 }}
+                >
+                    {
+                        rooms.map(room => (
+                            <RoomCard 
+                                key={room.id} 
+                                name={room.name}
+                                price={room.price} 
+                                photos={room.photos}
+                                id={room.id}
+                                isFav={room.is_fav}
+                                isSuperHost={room.user.superhost}
+                                />
+                        ))
+                    }
+                    <TouchableOpacity onPress={increasePage}>
+                        <LoadMore>
+                            <LoadMoreText>Load More</LoadMoreText>
+                        </LoadMore>
+                    </TouchableOpacity>
+                </ScrollView>
+                </>
+                )}
+            </Container>
+            );
+        };
+
+    Realm Database에 대해 알아보자
+        핸드폰에 database가 있는 것처럼 느끼게 emulate 해준다.
+        redux 대신에 쓸 수 있다? 특히 redux persist?
+        로딩 화면이 나타나는 것을 좀 더 해결하는 방법? redux 대신에?
+
+
+# 9.13 React Native Web Swiper
+    $ npm install react-native-web-swiper
+
+    (components/RoomCard.js)
+        import React from "react";
+        import Pt from "prop-types";
+        import styled from "styled-components/native";
+        import { Dimensions, View } from "react-native";
+        import Swiper from 'react-native-web-swiper'
+
+        const {width, height} = Dimensions.get("screen");
+
+        const Container = styled.View`
+            margin-bottom: 25px;
+            align-items: flex-start;
+        `;
+
+        const Name = styled.Text`
+            font-size: 18px;
+            font-weight: 300;
+            margin-bottom: 7px;
+        `;
+
+        const PriceContainer = styled.View`
+            flex-direction: row;
+        `;
+
+        const PriceText = styled.Text``;
+
+        const PriceNumber = styled.Text`
+            font-weight: 900;
+        `;
+
+        const Superhost = styled.View`
+            padding: 3px 5px
+            border: 1px solid black;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        `;
+
+        const SuperhostText = styled.Text`
+            text-transform: uppercase;
+            font-weight: 500;
+            font-size: 10px;
+        `;
+
+        const PhotosContainer = styled.View`
+            margin-bottom: 10px;
+            overflow: hidden;
+            background-color: red;
+            width: 100%;
+            height: ${height/4}px;
+        `;
+
+
+        const SlideImage = styled.Image`
+        width: 100%;
+        height: 100%;
+        `;                          
+
+
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price,}) => {
+            console.log(typeof photos)              
+            return (
+                <Container>
+                <PhotosContainer>
+                    {photos.length === 0 ? (
+                        <SlideImage 
+                            resizeMode="repeat" 
+                            source={require("../assets/roomDefault.jpg")} 
+                        />
+                        ) : (
+                            <Swiper 
+                                controlsProps={{
+                                    PrevComponent: () => null,
+                                    NextComponent: () => null,
+                                    dotActiveStyle: {
+                                        backgroundColor: "white"
+                                    }
+                                }}
+                                >
+                                {photos.map(photo => (
+                                    <View key={photo.id}>
+                                        <SlideImage source={{ uri: photo.file }} />
+                                    </View>
+                                ))}
+                            </Swiper>
+                        )}
+                </PhotosContainer>
+                {isSuperHost ? (
+                    <Superhost>
+                        <SuperhostText>Superhost</SuperhostText>
+                    </Superhost>
+                    ) : null}
+                <Name>{name}</Name>
+                <PriceContainer><PriceNumber>{price}</PriceNumber><PriceText>/night</PriceText></PriceContainer>
+            </Container>
+            );
+        };
+
+        RoomCard.propTypes = {
+            id: Pt.number,
+            isFav: Pt.bool.isRequired,
+            isSuperHost: Pt.bool.isRequired,
+            photos: Pt.arrayOf(
+                Pt.shape({
+                    file: Pt.string
+                })
+            ),
+            name: Pt.string.isRequired,
+            price: Pt.number.isRequired
+        };
+
+        export default RoomCard
+
+    react-native-web-swiper로 바꿨는데, 바꾸고나서 더 느려진듯, 테스트 해보고 react-native-swiper로 바꾸든가 해야 할 듯
+    확실히 그냥 react-native-swiper가 훨씬 빠름. 다시 돌려놨음
+
+
+## SAVED SCREEN 
+
+# 10.0 Getting Favourites
