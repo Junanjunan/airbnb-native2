@@ -201,12 +201,15 @@
 ## 7 REDUX SETUP
 
 # 7.0 usersSlice
-    (Gate.js)
+    (components/Gate.js)
         import React from "react";
 
         export default () => {
-            const isLoggedIn = False;
-            return (<View>{isLoggedIn? <TexT>Welcome</TexT> : <Text>Login Please</Text>}</View>);
+            const isLoggedIn = false;
+            return (
+                <View style={{ justifyContent: "center", alignItems: "center", flex:1}}>
+                    {isLoggedIn? <Text>Welcome</Text> : <Text>Login Please</Text>}</View>
+                );
         }
 
 
@@ -256,13 +259,15 @@
 
     여기까지 하고 보면, 정 중앙에 Login Please 뜰 것임
 
+    isLoggedIn 값에 따라 첫화면이 달라진다. isLoggedIn을 Redux store에 연결하자
+
 
     * 이제 Redux toolkit을 설치하자
         $ npm install @reduxjs/toolkit
     * Redux 설치
-        $ npm add redux
+        $ npm install redux (또는 npm add redux ?)
     * ?
-        $ npm add react-redux
+        $ npm install react-redux (또는 npm add react-redux ?)
 
     설치가 모두 끝나면 Redux 시작
     redux 폴더를 만들고 그 안에 store.js, usersSlice.js, rootReducer.js 만들자 (usersSlice.js - 우리의 첫 reducer?)

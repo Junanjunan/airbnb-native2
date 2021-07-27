@@ -5,6 +5,7 @@ import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Image } from 'react-native';
+import Gate from './components/Gate';
 
 const cacheImages = images => images.map(image =>{
 if(typeof image === "string"){
@@ -30,10 +31,12 @@ const loadAssets = async () => {
     
     return Promise.all([...fontPromises, ...imagePromises])     // cacheImages(images), cacheFonts(fonts) 모두 Promise를 갖는 Array 따라서 왼족과 같이 Promise.all()이 가능한 듯, ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
 };
-return isReady ? (<Text>I'm ready</Text>) : (
-<AppLoading 
-onError={console.error} 
-onFinish={handleFinish} 
-startAsync={loadAssets} />
-);
+return isReady ? (
+    <Gate /> 
+    ) : (
+    <AppLoading 
+    onError={console.error} 
+    onFinish={handleFinish} 
+    startAsync={loadAssets} />
+    );
 }
