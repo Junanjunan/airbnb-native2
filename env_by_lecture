@@ -22,6 +22,9 @@
         git remote add origin https://github.com/Junanjunan/airbnb-native2
         git push -u origin main
 
+    ** git add filename 으로는 되는데, git add . 이 안됨... 왜이러지...
+        git push origin master는 안되고 git push -u origin main 은 되는 상황
+
     다음 설명은 airbnb-native 폴더에..?
 
     설치, 셋팅 완료 후 앱실행
@@ -150,7 +153,7 @@
     설치: $ npm add @expo/vector-icons (또는 npm install @expo/vector-icons ?)
 
     font 패지지도 필요
-    설치: $ expo install expo-font
+    설치: $ expo install expo-font     (expo에 있는 것을 설치할 떄, npm, yarn을 써도 되는데, expo install 을 사용하면, 호환이 되는 version을 찾아준다.)
 
     (App.js)
         import { StatusBar } from 'expo-status-bar';
@@ -169,22 +172,22 @@
         }
         });
 
-        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))
-
+        const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))     // fonts를 인자로 갖는 cacheFonts 함수를 만들자, Highly efficient method for loading fonts from static or remote resources which can then be used with the platform's native text elements. In the browser this generates a @font-face block in a shared style sheet for fonts. No CSS is needed to use this method.
+                                                                                // cacheFonts는 font array를 return 한다.
         export default function App() {
         const [isReady, setIsReady] = useState(false);
         const handleFinish = () => setIsReady(true);
         const loadAssets = async () => {
             const images = [
             require("./assets/loginBg.jpg"),
-        "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
-        ];
-        const fonts = [Ionicons.font]
-        const imagePromises = cacheImages(images);                  # array 임
-        const fontPromises = cacheFonts(fonts);                     # array 임
-        console.log(cacheFonts(fonts));
-        return Promise.all([...fontPromises, ...imagePromises])     # ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
-        }
+            "https://www.google.com/url?sa=i&url=https%3A%2F%2Febenezersuites.com%2Fhome%2Fairbnb-logo%2F&psig=AOvVaw1nvmxtozHJBe-U0j7iYZey&ust=1626415945104000&source=images&cd=vfe&ved=0CAoQjRxqFwoTCND24de15PECFQAAAAAdAAAAABAI"
+            ];
+            const fonts = [Ionicons.font]
+            const imagePromises = cacheImages(images);                  // array 임
+            const fontPromises = cacheFonts(fonts);                     // array 임 , console.log(cacheFonts(fonts)); 를 해보면 Promise Array임을 알 수 있다.
+            
+            return Promise.all([...fontPromises, ...imagePromises])     // cacheImages(images), cacheFonts(fonts) 모두 Promise를 갖는 Array 따라서 왼족과 같이 Promise.all()이 가능한 듯, ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
+        };
         return isReady ? (<Text>I'm ready</Text>) : (
         <AppLoading 
         onError={console.error} 
@@ -193,6 +196,7 @@
         );
         }
 
+        // 이런식으로 preload 하는 것은 좋은것이라 함...
 
 ## 7 REDUX SETUP
 
