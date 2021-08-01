@@ -1376,6 +1376,7 @@ export default userSlice.reducer;
 
 
 # 8.5 Sign In part Two
+    
     이제 사용자 이름과 비밀번호를 state에 등록해보자
 
     (screens/Auth/SignIn.js)
@@ -1404,6 +1405,9 @@ export default userSlice.reducer;
             );
         };
 
+        // onChangeText: text input이 변경 될 때 사용되는 callback 함수, value={username}으로 되어 있기 때문에 onChangeText로 setUsername 안해주면 state의 username 값이 변하지 않고 계속 남아있어서 input창 값이 변하지 않는다. password도 마찬가지
+            // 우리는 state 값을 이용하고 싶고, input 창은 state 값을 받고있고, input창이 변하려면, state 값을 변화시켜야 하고 그러기 위해서 onChangeText로 setUsername, setPassword 등을 해주어야 한다.
+
     기본로직 작성, 되는것 확인, 이제 좀 더 꾸며보자
 
     (components/Auth/Input.js)
@@ -1419,13 +1423,13 @@ export default userSlice.reducer;
             width: ${width/1.5}px;
         `;
 
-        const Input = ({value, placeholder, isPassword=false, autoCapitalize}) => (
+        const Input = ({value, placeholder, isPassword=false, autoCapitalize, stateFn}) => (        // stateFn이 대체 무엇인가... 검색도 안되는데
             <Container 
                 value={value} 
                 placeholder={placeholder} 
                 secureTextEntry={isPassword ? true: false} 
                 autoCapitalize={autoCapitalize}
-                onChangeText = {(text) => stateFn(text)} 
+                onChangeText = {(text) => stateFn(text)}                // setUsername, setPassword를 안쓰고 웬 stateFn? 검색도 안되는데 웬 stateFn?...
             />
         );
 
@@ -1461,7 +1465,8 @@ export default userSlice.reducer;
                     <Input 
                         value={password} 
                         placeholder="Password" 
-                        stateFn={setPassword}    
+                        isPassword={true}
+                        stateFn={setPassword}    // stateFn에 setPassword를 입력해주자// onChangeText={text => setPassword(text)} 
                     />
                     <Btn text={"Sign In"} accent onPress={handleSubmit} />
                 </Container>
