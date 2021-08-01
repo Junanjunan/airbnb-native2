@@ -1,6 +1,26 @@
 ** 핸드폰에서 Expo가 저절로 꺼지는 오류 발생시
     오타가 생겼을 때 오타 수정해주니 해결되었음 (alignItems: "Center" 를 "center" 로 바르게 고쳤더니 해결됨)
 
+** import 할 때 {} 안에 오는 것과 그냥 오는 것, 그리고 정의하지 않았는데 이름 바뀌어서 오는 것에 대한 설명
+    https://codingmania.tistory.com/333
+    
+    export a
+    export default b
+
+    a는 다른곳에서 호출될 때 import { a }
+        다른 곳에서 호출될 때 호출한 곳에서 이름 바꿀 떄 import { a as c }
+    b는 다른곳에서 호출될 때 import b
+        다른 곳에서 호출될 떄 호출한 곳에서 이름 바꿀 때 import d  --> default로 되어있는 것은 하나여야 하기 때문에 자동으로 인식
+            --> usersSlice.js에서 export default userSlice.reducer 로 되어 있고, rootReducer.js에서 import userReducers from "./usersSlice";
+                -> 이는 usersSlice.reducer를 usersReducer로 이름을 바꿔서 호출한 것이다.
+
+    변수명도 Sub.js에서 마음대로 지을 수 있습니다. 
+    위 코드에서는 변수 d가 바로 변수 b를 import한 것이다. 
+    나머지 a와 c는 반드시 export할 때의 이름을 그대로 import해야 하며, 괄호 안에서 불어와야 합니다.
+    괄호 안의 변수도 이름을 바꾸고 싶다면, as 라는 키워드를 사용해 바꿀 수 있습니다. 
+    c as e라고하면, 변수 c의 값을 변수 e로 넘겨주는 겁니다. 
+    출처: https://codingmania.tistory.com/333 [개발자의 개발 블로그]
+
 # 6.1 Setup
     github에 새 repository 필요 /airbnb-native-re
 
@@ -95,7 +115,7 @@
 
         const cacheImages = images => images.map(image =>{
         if(typeof image === "string"){
-            return Image.prefetch(image);       // Image.prefetch -> React Native. React Native’s Image component has a prefetch method that will save the image into the device’s image cache:
+            return Image.prefetch(image);       // Image.prefetch(url) -> React Native. React Native’s Image component has a prefetch method that will save the image into the device’s image cache: / Expo API Reference, prefetch():Prefetches a remote image for later use by downloading it to the disk cache
         } else {                                // 이렇게 폴더에 있는 이미지를 가져오는 경우를 위해서 npm add expo-asset
             return Asset.fromModule(image).downloadAsync();     // $ npm install expo-asset , string이 아니고 file일 때 image를 가져올 수 있도록
                                                                 // Asset.fromModule(module): Returns the Asset instance representing an asset given its module or URL
@@ -114,10 +134,10 @@
         console.log(cacheImages(images));
         }
         return isReady ? (<Text>I'm ready</Text>) : (
-        <AppLoading 
+        <AppLoading                     // AppLoading -> expo documentation
         onError={console.error}         // AppLoaing에 쓸 수 있는 것인 듯, Error가 발생할때 실행되는 함수 입력
         onFinish={handleFinish}         // 역시 AppLoading에 쓸수 있는 것인 듯, Error 없이 완료되면 실행되는 함수 입력
-        startAsync={loadAssets} />
+        startAsync={loadAssets} />      // startAsync (function) -- A function that returns a Promise, and the Promise should resolve when the app is done loading required data and assets.
         );
         }
 
@@ -140,9 +160,6 @@
 
         출력되는 것을 보다시피, 우리가 만든 cacheImages 함수는 Promise Array를 return 한다.
 
-        첫번째 Promise는 첫번째 이미지(Image.prefetch(image))를 downloadAsync 한 것이라고 설명했는데, prefetch한것 아닌가?
-        두번째 Promise는 두번째 이미지를 prefetch 한 것이라고 설명했는데, downloadAsync 한것 아닌가?..
-        
         Promise에 대해서 알아보자
             https://joshua1988.github.io/web-development/javascript/promise-for-beginners/
             https://joshua1988.github.io/web-development/javascript/javascript-asynchronous-operation/
@@ -174,6 +191,7 @@
 
         const cacheFonts = fonts => fonts.map(font => Font.loadAsync(font))     // fonts를 인자로 갖는 cacheFonts 함수를 만들자, Highly efficient method for loading fonts from static or remote resources which can then be used with the platform's native text elements. In the browser this generates a @font-face block in a shared style sheet for fonts. No CSS is needed to use this method.
                                                                                 // cacheFonts는 font array를 return 한다.
+                                                                                // Asset.loadAsync(modules): Returns a Promise that resolves with an array of Assets when the asset(s) has been saved to disk.
         export default function App() {
         const [isReady, setIsReady] = useState(false);
         const handleFinish = () => setIsReady(true);
@@ -186,7 +204,9 @@
             const imagePromises = cacheImages(images);                  // array 임
             const fontPromises = cacheFonts(fonts);                     // array 임 , console.log(cacheFonts(fonts)); 를 해보면 Promise Array임을 알 수 있다.
             
-            return Promise.all([...fontPromises, ...imagePromises])     // cacheImages(images), cacheFonts(fonts) 모두 Promise를 갖는 Array 따라서 왼족과 같이 Promise.all()이 가능한 듯, ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
+            return Promise.all([...fontPromises, ...imagePromises])     // cacheImages(images), cacheFonts(fonts) 모두 Promise를 갖는 Array 따라서 왼족과 같이 Promise.all()이 가능한 듯 -> 아닌듯, 그 안의 내용의 return 값이 promise가 아니여도 되는 듯(예를 들면 일반 함수).., ... : 3개의 점을 찍으면 배열(array) 안의 내용물을 가져온다는 것
+                                                                        // https://code-masterjung.tistory.com/91 추가적인 Promise.all에 대한 설명
+                                                                        // https://programmingsummaries.tistory.com/325
         };
         return isReady ? (<Text>I'm ready</Text>) : (
         <AppLoading 
@@ -201,7 +221,7 @@
 ## 7 REDUX SETUP
 
 # 7.0 usersSlice
-    (components/Gate.js)
+    (components/Gate.js)                // Gate.js 에서 2개의 navigation을 보여주자.  로그인 되었을때 화면과 안되었을 때 화면
         import React from "react";
 
         export default () => {
@@ -259,7 +279,9 @@
 
     여기까지 하고 보면, 정 중앙에 Login Please 뜰 것임
 
-    isLoggedIn 값에 따라 첫화면이 달라진다. isLoggedIn을 Redux store에 연결하자
+    isLoggedIn 값에 따라 첫화면이 달라진다. 
+    
+    isLoggedIn을 Redux store에 연결하자
 
 
     * 이제 Redux toolkit을 설치하자
@@ -282,9 +304,9 @@
                 isLoggedIn: false,
                 token: null             # 처음 상태에서 token: null -> token을 만든 이유는 token을 state에 저장하기 위해서다
             },
-            reducers: {
-                logIn(state, action){
-                    state.isLoggedIn = true;
+            reducers: {                         
+                logIn(state, action){           // logIn의 경우도 state를 mutate하기 때문에 {}를 써서 바로 return하지 않는것으로 표현...?
+                    state.isLoggedIn = true;            
                     state.token = action.payload.token;
                 },
                 logOut(state, action){
@@ -294,8 +316,9 @@
             }
         })
 
-        export const {logIn, logOut} = usersSlice.actions;
-        export default usersSlice.reducer;
+        export const {logIn, logOut} = userSlice.actions;      // console.log(userSlice.reducers) 하면 undefined, console.log(userSlice.actions) 하면 reducers에 표현한 것 그대로 나옴. 만들때는 reducers로 표현, 외부에서 쓸때는 actions로 표현 되는 것인듯...한데, 또 userSlice.recuer는 출력이 됨...
+        
+        export default userSlice.reducer;
 
     (redux/rootReducer.js)
         import { combineReducers } from "redux";
@@ -323,7 +346,6 @@
     이제 store는 만들었으니 App.js에 연결해보자
 
     (App.js)
-        import { StatusBar } from 'expo-status-bar';
         import React, { useState } from 'react';
         import { Asset } from 'expo-asset';
         import * as Font from 'expo-font';
@@ -357,7 +379,7 @@
         return Promise.all([...fontPromises, ...imagePromises])
         }
         return isReady ? (
-            <Provider store={store}>                    # react-redux에서 Provider를 가져와야 하고, Provider는 store에 접근할 수 있어야 한다.
+            <Provider store={store}>                    # store 접근/호출을 위해 react-redux에서 Provider를 가져와야 한다. 그리고 Provider로 접근할 store를 호출 import store from "./redux/store"
             <Gate />
             </Provider>
         ) : (
@@ -439,7 +461,7 @@
             );
         };
 
-    selector는 state에 접근하게 해주고, state를 보내기도 한다.
+    useSelector는 state에 접근하게 해주고, state를 보내기도 한다.
     userSelector는 state의 전부가 아닌 일부만 가져올 수 있기 때문에 유용하다.
 
     위와 같이 하면 아래와 같이 출력 됨
@@ -491,10 +513,11 @@
         export const {logIn, logOut} = usersSlice.actions;
         export default usersSlice.reducer;
 
+    useSelector를 이용해서 바로 state를 가져옴으로써, mapStateToProps와 connect를 안쓰고 짧게 할 수 있음 확인
+
     TouchableOpacity, onPress를 이용할 건데
-    dispatch에 접근할 수 있어야 한다. dispatch를 가져올건데,
-    connect를 사용해서 mapDispatchToProps 로 가져올 수 있다.
-    또는 hook을 사용할 수 도 있다. (useDispatch)
+    dispatch에 접근할 수 있어야 한다. dispatch를 가져올건데, connect를 사용해서 mapDispatchToProps 로 가져올 수 있다.
+    mapDispatchToProps 대신 useDispatch 사용하자(hook)
 
     (Gate.js)
         import React from "react";
@@ -564,7 +587,7 @@
                             <Text>Log Out</Text>
                         </TouchableOpacity>
                         ) : (
-                        <TouchableOpacity onPress={() => dispatch(logIn("bs.token"))}>
+                        <TouchableOpacity onPress={() => dispatch(logIn("bs.token"))}>      // logIn({token:"a"})으로 해도 임시 작동 되는데, logIn({ab: "s", cd:"as", asdfas:"asdf"}) 해도 임시 작동 됨..... ㅅㅂ...
                             <Text>Log In</Text>
                         </TouchableOpacity>
                         )}
@@ -605,19 +628,21 @@ export default userSlice.reducer;
 
     $ npm install redux-persist
 
-    configureStore 설정을 바꿔야 함
+    configureStore 설정을 바꿔야 함 (createStore 대신 사용한 configureStore를 redux-persist를 사용하기 위해서 추가 설정을 해주어야 한다.)
+        store.js에 persist를 사용하기 위한 설정 해주어야 한다. const persistConfig ~~
+        persistConfig를 이용해서 persistReducer를 만들고, persistReducer를 configureStore에 있는 rootReducer 대신 이용해준다.
 
     (redux/store.js)
         import { configureStore } from "@reduxjs/toolkit";
         import { persistStore, persistReducer } from "redux-persist";
         import rootReducer from "./rootReducer";
 
-        const persistConfig = {
-            key:'root',                        # 여기에 state를 어디에 저장하고 싶은지 Redux Persist 설정을 추가하면 된다. 우선 공식문서와 똑같이 작성
-            storage: AsyncStorage
+        const persistConfig = {                 // documentation과 똑같이 만들어보자
+            key:'root',                         // 여기에 state를 어디에 저장하고 싶은지 Redux Persist 설정을 추가하면 된다. 우선 공식문서와 똑같이 작성
+            storage: AsyncStorage               // 이게 중요. 어떤 storage를 사용해서 어떻게 state를 저장하고 싶은지 설정해줘야 한다. documentation을 보면(https://github.com/rt2zz/redux-persist) 여러가지 storage를 이용할 수 있음을 확인 가능
         }
 
-        const persistedReducer = persistReducer(persistConfig, rootReducer)     # rootReducer 자리: persist 하려는 reducer, persist는 save를 의미 -> Redux Persist에게 rootReducer에 변화가 있을 때마다 매번 저장하라고 하는 것임
+        const persistedReducer = persistReducer(persistConfig, rootReducer)     # rootReducer 자리: persist 하려는 reducer, persist는 save를 의미 -> Redux Persist에게 rootReducer에 변화가 있을 때마다 persistConfig에 설정한대로 저장하라고 하는 것임
 
         const store = configureStore({
             reducer: rootReducer
@@ -633,8 +658,8 @@ export default userSlice.reducer;
         import { configureStore } from "@reduxjs/toolkit";
         import { persistStore, persistReducer } from "redux-persist";
         import rootReducer from "./rootReducer";
-        import { AsyncStorage } from "react-native";                    
-
+        import AsyncStorage from "@react-native-async-storage/async-storage"; // 강의:import { AsyncStorage } from "react-native"; 바뀌었음
+                                                        
         const persistConfig = {
             key: "root",                      
             storage: AsyncStorage
@@ -663,7 +688,7 @@ export default userSlice.reducer;
         import { configureStore } from "@reduxjs/toolkit";
         import { persistStore, persistReducer } from "redux-persist";
         import rootReducer from "./rootReducer";
-        import { AsyncStorage } from "react-native";
+        import AsyncStorage from "@react-native-async-storage/async-storage";
 
         const persistConfig = {
             key: "root",                        
@@ -681,13 +706,14 @@ export default userSlice.reducer;
         export default store;
 
     여기까지 하고 저장해보면, A non-seriaizable value was ~ 하고 오류가 뜨는데,
-    Redux tooklik이 Redux Persist가 가진 action들과 문제가 생긴 것이라 함
+    usersSlice.js에서 export const { logIn, logOut } = userSlice.actions;를 통해 이미 action들을 export 했다.
+    이 때문에 Redux tooklik이 Redux Persist가 가진 action들과 충돌해서 문제가 생긴 것이라 함
 
     (redux/store.js)
-        import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+        import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";    // 이제 사용되지 않는다
         import { persistStore, persistReducer } from "redux-persist";
         import rootReducer from "./rootReducer";
-        import { AsyncStorage } from "react-native";
+        import AsyncStorage from "@react-native-async-storage/async-storage";
         import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE } from "redux-persist/es/constants";
 
         const persistConfig = {
@@ -699,7 +725,7 @@ export default userSlice.reducer;
 
         const store = configureStore({
             reducer: persistedReducer,
-            middleware: getDefaultMiddleware({
+            middleware: getDefaultMiddleware({      // 이제 사용되지 않는다
                 serializableCheck:{
                     ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
                 }
@@ -714,6 +740,37 @@ export default userSlice.reducer;
     따라서 이 둘이 잘 작동되도록 Redux toolkit에게 Redux Persist의 모든 action 들을 irgnore 하라고 한것임
     (Redux toolkit은 Redux Persist의 action들이 이상하다고 생각하기 떄문)
 
+    ** 'getDefaultMiddleware' is deprecated -> 더 이상 호출해서 사용하지 않는다.
+    호출하지 않고 다음과 같이 변형해서 사용
+
+    (변경 전(강의))
+        import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit"; 
+
+        const store = configureStore({
+                    reducer: persistedReducer,
+                    middleware: getDefaultMiddleware({      // 이제 사용되지 않는다
+                        serializableCheck:{
+                            ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+                        }
+                    })
+                });    
+
+    (변경 후 - stackoverflow 또는 https://redux-toolkit.js.org/api/getDefaultMiddleware#customizing-the-included-middleware 참조)
+        const store = configureStore({
+            reducer: persistedReducer,
+            middleware: (getDefaultMiddleware) =>
+                getDefaultMiddleware({
+                serializableCheck:{
+                    ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+                }
+            })
+        });
+
+    즉, 변경후에는 기존에 있떤 getDefaultMiddleware({}) 앞에 (getDefaultMiddleware) => 를 추가해서
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+        ~~
+    })
+
 
 # 7.3 redux-persist part Two
     PersistGate: 화면 rendering을 위해 state를 load 할 때까지 기다려주는 component임
@@ -723,7 +780,7 @@ export default userSlice.reducer;
         import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
         import { persistStore, persistReducer } from "redux-persist";
         import rootReducer from "./rootReducer";
-        import { AsyncStorage } from "react-native";
+        import AsyncStorage from "@react-native-async-storage/async-storage";
         import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE } from "redux-persist/es/constants";
 
         const persistConfig = {
@@ -782,8 +839,8 @@ export default userSlice.reducer;
         return Promise.all([...fontPromises, ...imagePromises])
         }
         return isReady ? (
-            <Provider store={store}>                    # isLoggedIn === false
-            <PersistGate persistor={persistor}>       # isLoggedIn === true (핸드폰에서 state를 load 한 후)
+            <Provider store={store}>                  // isLoggedIn === false 상태이고
+            <PersistGate persistor={persistor}>       // isLoggedIn === true (핸드폰에서 state를 load 한 후) 상태로 된다. 이게 PersistGate를 사용하는 이유
                 <Gate />
             </PersistGate>
             </Provider>
@@ -838,8 +895,9 @@ export default userSlice.reducer;
     
     React navigation을 이용하자
     https://reactnavigation.org/docs/getting-started
+        
+        $ npm install @react-navigation/native
         $ npm install @react-navigation/stack
-        ($ npm install @react-navigation/native)
         $ expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context @react-native-community/masked-view
             https://dog-developers.tistory.com/183 보안 오류 해결 후
                 1. windows PowerShell 프로그램을 관리자 권한으로 실행합니다.
@@ -856,7 +914,7 @@ export default userSlice.reducer;
         const Auth = createStackNavigator();
 
         export default () => <Auth.Navigator>
-                                                # navigator 안에는 screen이 와야 한다. 아직 없으니 screen을 만들자
+                                                // navigator 안에는 screen이 와야 한다. 아직 없으니 screen을 만들자
         </Auth.Navigator>   
 
     (screens/Welcome.js), (screens/SignUp.js), (screen/SignIn.js) 생성
@@ -865,7 +923,7 @@ export default userSlice.reducer;
 
         export default () => (
             <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
-                <Text>Welcome</Text>        # 각각 Sign Up, Sign In으로 3개의 screen 생성 
+                <Text>Welcome</Text>        // 각각 Sign Up, Sign In으로 3개의 screen 생성 
             </View>
         );
 
@@ -880,13 +938,13 @@ export default userSlice.reducer;
 
         export default () => (
             <Auth.Navigator>
-                <Auth.Screen name="Welcome" component={Welcome} />
+                <Auth.Screen name="Welcome" component={Welcome} />      // name 으로 표시한 부분이 navigation (상단)에 표시된다.
                 <Auth.Screen name="SignIn" component={SignIn} />
                 <Auth.Screen name="SignUp" component={SignUp} />
             </Auth.Navigator>
         );  
 
-    이제 Gate.js에서 render 해주자
+    이제 작동할 수 있게 Gate.js에서 render 해주자
     (components/Gate.js)
         import React from "react";
         import { View, Text, TouchableOpacity } from "react-native";
@@ -899,7 +957,7 @@ export default userSlice.reducer;
             const dispatch = useDispatch();
             return (
                 <NavigationContainer>   # Navigator를 render 하고 싶으면 NavigationContainer로 감싸주어야 한다.(아니면 오류)
-                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}> # 이 부분은 이제 필요 없음 삭제
+                <View style={{justifyContent: "center", alignItems: "center", flex: 1}}> // 이 부분은 이제 필요 없음 삭제
                     {isLoggedIn? (
                         <TouchableOpacity onPress={() => dispatch(logOut())}>
                             <Text>Log Out</Text>
@@ -907,7 +965,7 @@ export default userSlice.reducer;
                         ) : (
                         <Auth /># user가 로그아웃 하면 보여주는 이부분에 Auth를 render할 것이다.
                         )}
-                </View> # 삭제
+                </View> // 삭제
                 </NavigationContainer>
             );
         };
@@ -964,7 +1022,7 @@ export default userSlice.reducer;
             return(
                 <View style={{justifyContent: "center", alignItems: "center", flex: 1}}>
                     <Text>Welcome~!</Text>
-                    <Button onPress={() => navigation.navigate("SignUp")} title={"Sign Up"}></Button>
+                    <Button onPress={() => navigation.navigate("SignUp")} title={"Sign Up"}></Button>   // (screens/Welcome.js) navigation.navigate("X")와 (navigation/Auth.js) <Auth.Screen name="X" /> 가 연동
                     <Button onPress={() => navigation.navigate("SignIn")} title={"Sign In"}></Button>
                 </View>
             );
@@ -981,16 +1039,16 @@ export default userSlice.reducer;
 
         const Auth = createStackNavigator();
 
-        const isAndroid = Platform.Os === "android"
+        const isAndroid = Platform.OS === "android"
 
         export default () => (
-            <Auth.Navigator mode="modal" headerMode="float" screenOptions={{
+            <Auth.Navigator mode="modal" headerMode="float" screenOptions={{        // mode: 화면 전환되는 방식을 바꿔준다. 근데 나는 안바뀜...
                 headerBackTitleVisible: false,
                 headerTransparent: true,
                 headerBackImage: () => ( 
                     <View style={{paddingLeft: 10}}>
                         <Ionicons 
-                            name={isAndroid ? "md-arrow-down": "ios-arrow-down"}    # expo.github.io/vector-icons/ 에서 아이콘 선택 가능
+                            name={isAndroid ? "md-arrow-down": "ios-arrow-down"}    // expo.github.io/vector-icons/ 에서 아이콘 선택 가능
                             size={28} 
                         />
                     </View>
@@ -1011,7 +1069,7 @@ export default userSlice.reducer;
     (components/Auth/BackBtn.js)
         import React from "react";
         import { Platform } from "react-native";
-        import styled from "styled-components/native";
+        import styled from "styled-components/native";      // styled 호출하면 자동완성으로 styled-components 나오는데, styled-components/native 로 수정 사용
         import { Ionicons } from "@expo/vector-icons";
 
         const isAndroid = Platform.OS ==="android";
@@ -1041,7 +1099,11 @@ export default userSlice.reducer;
                 headerTransparent: true,
                 headerBackImage: () => <BackBtn />
             }}>
-                <Auth.Screen name="Welcome" component={Welcome} />
+                <Auth.Screen name="Welcome" component={Welcome} options={{
+            headerTitleStyle:{
+                color: 'white'
+            }
+            }}/>
                 <Auth.Screen name="SignIn" component={SignIn} />
                 <Auth.Screen name="SignUp" component={SignUp} />
             </Auth.Navigator>
@@ -1058,7 +1120,7 @@ export default userSlice.reducer;
 
         const Image = styled.Image``;
 
-        const Logo = styled.Image` # React-native는 외부에서 url로 이미지를 가져올때, 높이, 가로 길이를 설정해주어야 화면에나타난다.
+        const Logo = styled.Image`  // React-native는 외부에서 url로 이미지를 가져올때, 높이, 가로 길이를 설정해주어야 화면에나타난다.
             width: 100px;           
             height: 100px;
         `;
@@ -1204,7 +1266,7 @@ export default userSlice.reducer;
             );
         };
 
-    여기까지 하면, Btb.js를 만든 것을 어떻게 적용하는 지 확인 할 수 있었다.
+    여기까지 하면, Btn.js를 만든 것을 어떻게 적용하는 지 확인 할 수 있었다.
     이제 좀 더 꾸며보자
 
     (colors.js)
@@ -1220,14 +1282,15 @@ export default userSlice.reducer;
         import PropTypes from "prop-types"
         import colors from "../../colors";
 
-        const { width } = Dimensions.get("screen")      # 핸드폰에서 해상도가 얼마나 큰지 모르니까 우선 이걸 호출 / { } 표시해준게 비구조화 할당으로 처리해준 것..?
+        const { width } = Dimensions.get("screen")      // 핸드폰에서 해상도가 얼마나 큰지 모르니까 우선 이걸 호출 / { } 표시해준게 비구조화 할당으로 처리해준 것..?
+                                                        // Dimensions.get() - 모바일 기기의 해상도를 가져올 수 있는 API, "screen"과 "window"의 차이점 -> https://millo-l.github.io/ReactNative-Dimensions-get-window%EC%99%80-Dimentsions-get-screen%EC%9D%98-%EC%B0%A8%EC%9D%B4%EC%A0%90/
 
         const Button = styled.View`
             border: 1px solid ${props => (props.accent ? "transparent" : colors.black)};
             border-radius: 10px;
             padding: 15px 0px;
             align-items: center;
-            width: ${width /2}px;           # 어떤 화면이든 화면가로크기의 절반으로 설정       
+            width: ${width /2}px;                   // 어떤 화면이든 화면가로크기의 절반으로 설정       
             background-color: ${props => (props.accent ? colors.red : "transparent")}
             `;
 
@@ -1279,7 +1342,7 @@ export default userSlice.reducer;
                         color: "white"
                     }
                 }}/>
-                <Auth.Screen name="SignIn" component={SignIn} options={{title: "Sign In"}} />
+                <Auth.Screen name="SignIn" component={SignIn} options={{title: "Sign In"}} />       // name 값이 화면에 navigation으로 표시되는데, 이를 바꿔주기 위해서 options={{title:"Sign In"}}  으로 바꿔준다. 이를 이용해 원하는 것으로 name과 다르게 title 정할 수 있다.
                 <Auth.Screen name="SignUp" component={SignUp} options={{title: "Sign Up"}} />
             </Auth.Navigator>
         );  
