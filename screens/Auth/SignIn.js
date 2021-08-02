@@ -4,6 +4,8 @@ import styled from "styled-components/native";
 import Btn from "../../components/Auth/Btn";
 import Input from "../../components/Auth/Input";
 import DismissKeyboard from "../../components/DismissKeyboard";
+import { userLogin } from "../../redux/usersSlice";
+import { isEmail } from "../../utils";
 
 const Container = styled.View`
     flex:1 ;
@@ -16,18 +18,37 @@ const InputContainer = styled.View`
 `;
 
 export default ({ route: { params }}) => {
-    const [username, setUsername] = useState(params?.email);
-    const [password, setPassword] = useState(params?.password);
-    const handleSubmit = () => alert(`${username}${password}`);
+    const [email, setEmail] = useState(params?.email);
+    const [password, setPassword] = useState(params?.password);    
+    const isFormValid = () => {
+        if (email === "" || password === ""){
+            alert("All fields are required.");
+            return false;
+        }
+        if(!isEmail(email)){
+            alert("Email is invalid");
+            return false;
+        }
+        return true
+    };
+    const handleSubmit = () => {
+        if (!isFormValid()){
+            return;
+        }
+        dispatch(userLogin({
+            username: email,
+            password
+        }))
+    };
     return(
         <DismissKeyboard>
         <Container>
             <StatusBar barStyle="light-content" />
             <InputContainer>
                 <Input 
-                    value={username} 
-                    placeholder="Username" 
-                    autoCapitalize="none" 
+                    value={email} 
+                    placeholder="Email" 
+                    keyboardType="email-address"
                     stateFn={setUsername}
                 />
                 <Input 

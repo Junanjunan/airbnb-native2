@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {StatusBar, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from "react-native";
 import styled from "styled-components/native";
-import { createAccount } from "../../api";
+import api from "../../api";
 import Btn from "../../components/Auth/Btn";
 import Input from "../../components/Auth/Input";
 import DismissKeyboard from "../../components/DismissKeyboard";
@@ -45,7 +45,7 @@ export default ({ navigation: { navigate } }) => {
         };
         setLoading(true);
         try {
-            const { status } = await createAccount({            // createAccount는 callApi를 실행, callApi는 axios[method](fullUrl, data, {headers}); 형태를 return하는데, 어떻게 if(status===201)의 조건문이 형성이 되나???? 이 부분 짚고 넘어가자
+            const { status } = api.createAccount({
                 first_name: firstName,
                 last_name: lastName,
                 email,
