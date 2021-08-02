@@ -1636,7 +1636,7 @@ export default userSlice.reducer;
         import React from "react";
         import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
-        export default ({children}) => {                    # children: 리액트에서 children이라는 prop은 컴포넌트 안에 있는 어떤 내용이든 자동적으로 가져와준다.
+        export default ({children}) => {                    // children: 리액트에서 children이라는 prop은 컴포넌트 안에 있는 어떤 내용이든 자동적으로 가져와준다.
             const onPress = () => Keyboard.dismiss();
             return (
             <TouchableWithoutFeedback onPress={onPress}>
@@ -1644,6 +1644,112 @@ export default userSlice.reducer;
             </TouchableWithoutFeedback>
             );
         }
+    
+    (screens/Auth/SignUp.js)
+        import React, { useState } from "react";
+        import {StatusBar, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default () => {
+            const [firstname, setFirstname] = useState("");
+            const [lastname, setLastname] = useState("");
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <DismissKeyboard>
+                    <Container>
+                        <StatusBar barStyle="light-content" />
+                            <KeyboardAvoidingView>
+                            <InputContainer>
+                                <Input 
+                                    value={firstname} 
+                                    placeholder="First name" 
+                                    autoCapitalize="none" 
+                                    stateFn={setFirstname}
+                                />
+                                <Input 
+                                    value={lastname} 
+                                    placeholder="Last name" 
+                                    autoCapitalize="none" 
+                                    stateFn={setLastname}
+                                />
+                                <Input 
+                                    value={username} 
+                                    placeholder="Username" 
+                                    autoCapitalize="none" 
+                                    stateFn={setUsername}
+                                />
+                                <Input 
+                                    value={password} 
+                                    placeholder="Password" 
+                                    stateFn={setPassword}    
+                                />
+                            </InputContainer>
+                            <Btn text={"Sign Up"} accent onPress={handleSubmit} />
+                            </KeyboardAvoidingView>
+                    </Container>
+                </DismissKeyboard>
+            );
+        };
+
+    (screens/Auth/SignIn.js)
+        import React, { useState } from "react";
+        import {View, Text, StatusBar} from "react-native";
+        import styled from "styled-components/native";
+        import Btn from "../../components/Auth/Btn";
+        import Input from "../../components/Auth/Input";
+        import DismissKeyboard from "../../components/DismissKeyboard";
+
+        const Container = styled.View`
+            flex:1 ;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const InputContainer = styled.View`
+            margin-bottom: 30px;
+        `;
+
+        export default () => {
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const handleSubmit = () => alert(`${username}${password}`);
+            return(
+                <DismissKeyboard>
+                <Container>
+                    <StatusBar barStyle="light-content" />
+                    <InputContainer>
+                        <Input 
+                            value={username} 
+                            placeholder="Username" 
+                            autoCapitalize="none" 
+                            stateFn={setUsername}
+                        />
+                        <Input 
+                            value={password} 
+                            placeholder="Password" 
+                            stateFn={setPassword}    
+                        />
+                    </InputContainer>
+                    <Btn text={"Sign In"} accent onPress={handleSubmit} />
+                </Container>
+                </DismissKeyboard>
+            );
+        };
 
 
 # 8.7 apiClient
