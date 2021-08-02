@@ -1760,7 +1760,7 @@ export default userSlice.reducer;
     (api.js) 생성
         import axios from "axios";
 
-        export const createAccount = axios.post("http://127.0.0.1:8000/api/v1/users", {});   // login에도 똑같이 처리해줘야 하기 때문에 좋지 못한 방식
+        export const createAccount = axios.post("http://127.0.0.1:8000/api/v1/users", {});   // {}은 data 자리라고 하는듯, axios.post(url[, data[, config]]). login에도 똑같이 처리해줘야 하기 때문에 좋지 못한 방식
         export const login = axios.post("http://127.0.0.1:8000/api/v1/users/login/" {});
         axios.get("URL", {jwt})       // profile 같은 경우는 다음과 같은 식으로 처리  
 
@@ -1769,20 +1769,20 @@ export default userSlice.reducer;
     (api.js)
         import axios from "axios";
 
+        // 아래는 API handler의 요구사항(requirements)이다.
         // make easy request without URL copypasting.
         // make post, get, delete, put requests.
-        // send jwt automatically
+        // send jwt easily
 
-        const callApi = async(method, path, data, jwt) => {
+        const callApi = async(method, path, data, jwt) => {     // path: url 의미, data: get을 할때에는 필요없지만, post를 할 때는 필요하다 함. 예를 들어 사용자를 생성 할 때 data를 보내야 한다. 그리고 JWT도 보내줘야 하는 경우가 있으니 jwt도 포함시켜준다.
             const headers = {
                 Authorization: jwt,                     // 기본적으로 JWT는 authorization에 넣어주어야 함
-                "Content-Type": "application/json"
+                "Content-Type": "application/json"      // rest framework에서 꼭 필요
             };
             const baseUrl = "http://127.0.0.1:8000/api/v1";
             const fullUrl = `${baseUrl}${path}`;
             if(method === "get" || method === "delete"){
-                axios.delete()
-                return axios[method](fullUrl, {headers});
+                return axios[method](fullUrl, {headers});       // axios.get 이랑 axios["get"] 은 같은 표현이라고 하는듯..
             } else{                                             // axios.get() 이나, axios.put() 등으로 하고 괄호 안에 무엇이 들어가야 하는지 참조사항을 보면, put등에는 get에는 없어도 되는 data 등이 필요함
                 return axios[method](fullUrl, data, {headers});
             }
@@ -1798,26 +1798,10 @@ export default userSlice.reducer;
 # 8.8 Create Account part One
     Redux를 사용하지 않고 사용자 생성을 해보자 -> Redux는 로그인을 할때는 관여 하지만, 유저 생성을 할때는 딱히 관여하지 않는다.
 
+    user 생성 함수는 (screens/Auth/SignUp.js)에서 호출하자
+
     (components/Auth/Input.js)
-        import React from "react";
-        import { Dimensions, TouchableOpacity } from "react-native";
-        import styled from "styled-components/native";
-        import PropTypes from "prop-types"
-        import colors from "../../colors";
-
-
-
-        const { width } = Dimensions.get("screen")      
-
-        const Container = styled.TextInput`
-            width: ${width/2}px;
-            padding: 12.5px 10px;
-            border: 1px solid ${colors.black};
-            background-color: white;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        `;
-
+        ...
         const Input = ({value, placeholder, isPassword=false, autoCapitalize, stateFn, keyboardType}) => (      // 이부분 추가해준 것임
             <Container
                 KeyboardType={keyboardType}         // 이부분 추가해준 것임
@@ -1828,17 +1812,7 @@ export default userSlice.reducer;
                 onChangeText = {(text) => stateFn(text)}
             />
         );
-
-        Input.propTypes = {
-            value: PropTypes.string,
-            placeholder: PropTypes.string,
-            isPassword: PropTypes.bool,
-            autoCapitalize: PropTypes.string,
-            stateFn: PropTypes.func.isRequired
-        }
-
-        export default Input;
-
+        ...
 
     email을 정규식으로 검증하자.
         emailregex.com ->구글에 is email regular expression 입력하면 나옴
@@ -1900,7 +1874,7 @@ export default userSlice.reducer;
                         username: email,
                         password
                     });
-                    console.log(data);              // 이렇게 해주면 여러가지 것들 나오는데, 그중 접속상태를 알려주는 status 를 이용 할 것임  ->   const data는 const { status }로, console.log(data)는 console.log(status)로 바꿔서 유저생성할때 상태가 어떤지 확인할 것임
+                    console.log(data);              // 이렇게 해주면 rest API로부터 여러가지 정보 얻어는데, 그중 접속상태를 알려주는 status 를 이용 할 것임  ->   const data는 const { status }로, console.log(data)는 console.log(status)로 바꿔서 유저생성할때 상태가 어떤지 확인할 것임
                 } catch(e){
                     console.warn(e);
                 }
@@ -1944,6 +1918,7 @@ export default userSlice.reducer;
             );
         };
 
+
         // Android Studio에서 바로 생성되어야 하고, 
             나는 안되었음. 
             (api.js)
@@ -1966,12 +1941,15 @@ export default userSlice.reducer;
 
 
                 export const createAccount = form => callApi("post", "/users/", form);
+
+        // 강의대로 되긴 하는데 Network Error가 뜸.. ngrok으로 해결하면 될것이다.
         //모바일에서는 ngrok을 통해서 휴대폰으로 접속할 수 있게 설정을 해주어야 가능
             * ngrok 이용해서 휴대폰 접속하기: https://wayhome25.github.io/django/2017/03/18/django-ep1-setting/
                 1. ngrok을 다운받고, 압축을 해재한 후, 실행파일을 manage.py가 있는 곳과 같은 경로에 둔다.
                 2. 실행: ngrok http 8000 (Django의 default 포트가 8000, 그리고 manage.py를 첫경로에서 실행했기 때문에 ./ngrok 등이 아니라 바로 ngrok http 8000 으로 실행)
                 3. http://~~.ngrok.io -> http://localhost:8000이 생기는데 이를 복사해서 (api.js)의 baseUrl에 이용
                     const baseUrl = "http://~~.ngrok.io/api/v1";
+                *. python에서 allowed_host에 추가해줘야 한다.
 
             위 방식으로 하면, 핸드폰, emulator 모두 api서버와 통신 된다.
             * 일정 시간 지나면 연결 끊기는 것 같음. 이럴때는 다시 url 받아서 교체해서 사용
@@ -2043,9 +2021,9 @@ export default userSlice.reducer;
                         username: email,
                         password
                     });
-                    if(status === 201){
+                    if(status === 201){                 // status 201은 user가 잘 생성되었을 때 뜬다.
                         alert("Account created. Sign in please.");
-                        navigation.navigate("SignIn");
+                        navigation.navigate("SignIn");      // screen에(screens 폴더에 있는 파일 말하는 것 같긴 함..) 다른 props를 입력할 수 있다. Sign Up은 screen이다(<Auth.Screen .. />으로 되어있음). Sign Up이 받을 수 있는 Prop은 navigation prop이다. SignUp.js에 SignIn으로 갈 수 있는 navigation.navigate를 사용할 수 있다. // 내가 작성한 것중 navigation.navigate를 검색해보면, prop이 기본적으로 navigation prop을 갖고 있고, 이 navigation prop을 통해서 원하는 화면으로 navigate 하는 것
                     }
                     // go to Sign In
                 } catch(e){
@@ -2159,7 +2137,7 @@ export default userSlice.reducer;
                     );
                     }
 
-    (screens/Auth/SignIn.js)
+    (screens/Auth/SignUp.js)
         import React, { useState } from "react";
         import { StatusBar, KeyboardAvoidingView } from "react-native";
         import styled from "styled-components/native";
@@ -2207,7 +2185,7 @@ export default userSlice.reducer;
                 };
                 setLoading(true);
                 try {
-                    const { status } = await createAccount({
+                    const { status } = await createAccount({    // createAccount는 callApi를 실행, callApi는 axios[method](fullUrl, data, {headers}); 형태를 return하는데, 어떻게 if(status===201)의 조건문이 형성이 되나???? 이 부분 짚고 넘어가자
                         first_name: firstName,              // first_name -> (airbnb-api/users/serializers.py의 UserSerializer의 이름 형식을 그대로 가져온 것)
                         last_name: lastName,
                         email,
@@ -2216,7 +2194,7 @@ export default userSlice.reducer;
                     });
                     if(status === 201){
                         alert("Account created. Sign in please.");
-                        navigate("SignIn", { email, password });        // SignIn에 email, passwod를 보내자
+                        navigate("SignIn", { email, password });        // SignIn에 email, passwod를 보내자 , documentaion을 보면 navigate는 이동할 곳에, 원하는 정보(email, password)를 같이 보낼 수 있다.
                     }
                     // go to Sign In
                 } catch(e){

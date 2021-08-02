@@ -1,5 +1,5 @@
 import React from "react";
-import { Dimensions, TouchableOpacity } from "react-native";
+import { ActivityIndicator, Dimensions, TouchableOpacity } from "react-native";
 import styled from "styled-components/native";
 import PropTypes from "prop-types"
 import colors from "../../colors";
@@ -19,10 +19,14 @@ const Text = styled.Text`
     color: ${props => (props.accent ? "white" : "black")};
 `;
 
-const Btn = ({onPress, text, accent = false}) => (
-    <TouchableOpacity onPress={onPress}>
+const Btn = ({onPress, text, accent = false, loading}) => (
+    <TouchableOpacity onPress={loading ? null: onPress}>
         <Button accent={accent}>
-            <Text accent={accent}>{text}</Text>
+            {loading ? (
+                <ActivityIndicator color={accent ? "white" : "black"}/>     // loading일 때 버튼이 안보이도록
+            ) :(
+                <Text accent={accent}>{text}</Text>
+            )}
         </Button>
     </TouchableOpacity>
 );
@@ -30,7 +34,8 @@ const Btn = ({onPress, text, accent = false}) => (
 Btn.propTypes = {
     onPress: PropTypes.func.isRequired,
     text: PropTypes.string.isRequired,
-    acent: PropTypes.bool
+    acent: PropTypes.bool,
+    loading: PropTypes.bool
 };
 
 export default Btn;
