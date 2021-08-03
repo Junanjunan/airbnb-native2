@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import {StatusBar, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from "react-native";
 import styled from "styled-components/native";
-import api from "../../api";
-import Btn from "../../components/Auth/Btn";
-import Input from "../../components/Auth/Input";
-import DismissKeyboard from "../../components/DismissKeyboard";
-import { isEmail } from "../../utils";
+import Btn from "../../../components/Auth/Btn";
+import Input from "../../../components/Auth/Input";
+import DismissKeyboard from "../../../components/DismissKeyboard";
 
 const Container = styled.View`
     flex:1 ;
@@ -17,53 +15,18 @@ const InputContainer = styled.View`
     margin-bottom: 30px;
 `;
 
-export default ({ navigation: { navigate } }) => {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const isFormValid = () => {
-        if (
-            firstName === "" ||
-            lastName === "" ||
-            email === "" ||
-            password === ""
-        ) {
-            alert("All fields are required.");
-            return false;
-        };
-        if (!isEmail(email)) {
-            alert("Please add a valid email.");
-            return false;
-        };
-        return true;
-    };
-    const handleSubmit = async() => {
-        if (!isFormValid()){
-            return;
-        };
-        setLoading(true);
-        try {
-            const { status } = api.createAccount({
-                first_name: firstName,
-                last_name: lastName,
-                email,
-                username: email,
-                password
-            });
-            if(status === 201){
-                alert("Account created. Sign in please.");
-                navigate("SignIn", { email, password });        // SignIn에 email, passwod를 보내자
-            }
-        } catch(e){
-            console.warn(e);
-        } finally {
-            setLoading(false);
-        }
-    };
-    const dismissKeyboard = () => Keyboard.dismiss();
-    return(
+export default ({
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    handleSubmit
+}) => (
         <DismissKeyboard>
             <Container>
                 <StatusBar barStyle="light-content" />
@@ -99,4 +62,3 @@ export default ({ navigation: { navigate } }) => {
             </Container>
         </DismissKeyboard>
     );
-};
