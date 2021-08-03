@@ -8,7 +8,7 @@ const userSlice = createSlice({
         token: null,
     },
     reducers: {
-        logIn(state, action) {              // logIn의 경우도 state를 mutate 하는 것 같은데, redux toolkit의 createSlice를 쓰기 때문에 괜찮은것인가?
+        logIn(state, action) {
             state.isLoggedIn = true;
             state.token = action.payload.token;
         },
@@ -23,8 +23,10 @@ export const {logIn, logOut} = userSlice.actions;
 
 export const userLogin = (form) => async dispatch => {
     try{
-        const data = await api.login(form);
-        console.log(data);
+        const { data: {id, token} } = await api.login(form);
+        if (id && token) {
+            dispatch(logIn({ token }));
+        }
     } catch(e){
         alert(e);
     }

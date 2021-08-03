@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { NavigationContainer } from "@react-navigation/native";
 import Auth from "../navigation/Auth";
 import { logIn, logOut } from "../redux/usersSlice";
+import Main from "../navigation/Main";
 
 
 export default () => {
@@ -11,19 +12,7 @@ export default () => {
     const dispatch = useDispatch();
     return (
         <NavigationContainer>
-            {isLoggedIn? 
-            <TouchableOpacity onPress={() => dispatch(logOut())}>
-                <Text>Log out</Text>
-            </TouchableOpacity>
-            // console.log(logOut())
-            : 
-            <Auth />
-            }
+            {isLoggedIn ? <Main /> : <Auth />}
         </NavigationContainer>
     );
-};
-
-const mapStateToProps = state => {
-    console.log(state);
-    return {isLoggedIn: false};
 };

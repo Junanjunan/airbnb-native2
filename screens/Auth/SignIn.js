@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {View, Text, StatusBar} from "react-native";
+import { useDispatch } from "react-redux";
 import styled from "styled-components/native";
 import Btn from "../../components/Auth/Btn";
 import Input from "../../components/Auth/Input";
@@ -18,6 +19,7 @@ const InputContainer = styled.View`
 `;
 
 export default ({ route: { params }}) => {
+    const dispatch = useDispatch();
     const [email, setEmail] = useState(params?.email);
     const [password, setPassword] = useState(params?.password);    
     const isFormValid = () => {
@@ -38,7 +40,7 @@ export default ({ route: { params }}) => {
         dispatch(userLogin({
             username: email,
             password
-        }))
+        }));
     };
     return(
         <DismissKeyboard>
@@ -49,7 +51,7 @@ export default ({ route: { params }}) => {
                     value={email} 
                     placeholder="Email" 
                     keyboardType="email-address"
-                    stateFn={setUsername}
+                    stateFn={setEmail}
                 />
                 <Input 
                     value={password} 

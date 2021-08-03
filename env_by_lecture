@@ -2724,10 +2724,10 @@ export default userSlice.reducer;
         export const userLogin = form => async dispatch => {
             try{
                 const { 
-                    data: { id, token } 
+                    data: { id, token }             // 비구조화 할당을 통해 특정 data를 가져오자.
                 }= await api.login(form);
                 if (id && token) {
-                    dispatch(logIn({ token }));     // isLoggedIn을 true로 해주고, token을 저장해줄것이다. 이제 SignIn을 하면, render를 잘해주는지 확인. 어떻게? components/Gate.js에 설정해준 isLoggedIn이 잘 작동해서 LogOut 화면으로 바뀌면 됨
+                    dispatch(logIn({ token }));     // token: payload. isLoggedIn을 true로 해주고, token을 저장해줄것이다. 이제 SignIn을 하면, render를 잘해주는지 확인. 어떻게? components/Gate.js에 설정해준 isLoggedIn이 잘 작동해서 LogOut 화면으로 바뀌면 됨
                 }
             } catch(e){
                 alert(e);            
@@ -2742,6 +2742,14 @@ export default userSlice.reducer;
     State > userReducer 에서 isLoggedIn: true이고 token도 저장되었음을 확인 가능
 
     여기까지해서 createAccount와 login을 만들어 낸것이다!!
+
+    * Login 과정을 한번 정리해보자
+        -> axios를 통해 Promise return(api.js) 
+        -> userLogin 실행(redux/usersSlice.js), userLogin 안의 api.login이 실행되면서 axios를 통해 Promise return, 그 안의 data: {id, token}을 받아온다.(api.js)
+        -> 받아온 id, token을 이용해서 dispatch(logIn( {token })) 실행(dispatch = useDispatch() 이용). (payload와 type을 가지는 action(여기서는 logIn({ token }))을 통해서 dispatch. payload안에 token을 object 형태로 받아오고, type은 "users/logIn") (redux/usersSlice.js)
+        -> dispatch를 통해 state가 <isLoggedIn이 true로 바뀌고, token은 payload를 통해 넘어온 유저 고유의 token을 받아서 변경>. login 완료
+        요약: axios를 통해 data를 받아오고, 이 data로 dispatch를 하면 state를 변경해서 login 완료
+
 
     이제 main navigator를 만들자
 
@@ -2769,12 +2777,12 @@ export default userSlice.reducer;
 
 # 9.0 Main Navigation part One
 
-    npm install @react-navigation/bottom-tabs
+    $ npm install @react-navigation/bottom-tabs
 
 
     (nvigation/Main.js) 생성
-
-        import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+        import React from "react";
+        import { createBottomTabNavigator } from "@react-navigation/bottom-tab";
         import Explore from "../screens/Main/Explore";      // Tip: 키워드 입력하고 엔터해서 자동불러오기 하는데, 안되면 해당 파일을 열어주면 작동 될 것임
         import MapScreen from "../screens/Main/Map";
         import Profile from "../screens/Main/Profile";
