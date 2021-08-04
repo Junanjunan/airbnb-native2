@@ -2939,6 +2939,7 @@ export default userSlice.reducer;
         });
 
         const { setExploreRooms } = roomsSlice.actions;
+        // setExploreRooms는 actionCreator이다. actionCreator는 payload만 넣어주면 action이 된다고 우선 생각하고, toolkit 이용중이기 때문에 이 action에는 payload가 담긴다. payload는 아무거나, 여러개도 가능 아래에서 payload 담아줄것임
 
         export default roomsSlice.reducer;
 
@@ -3255,7 +3256,8 @@ export default userSlice.reducer;
             return {
                 getRooms: () => dispatch(getRooms())        // room에서 첫번째 fetch 된 것을 dispatch 하고 싶다. 아직 setting 되있지 않으니 만들어주자. redx/roomsSlice.js에 만들자
             }                                               // (redux/usersSlice.js)에 한 것처럼. dispatch가 포함되어 있는 asynchronized action이 있다(const userLogin 부분). 이와 같이 roomsSlice.js에도 만들자 
-        }
+        }                                                   // 근데, getRooms()를 action으로 갖는 dispatch를 getRooms에 할당하는 object return?
+                                                            // dispatch가 어떤 state와 연결되는지 등 확실히 알자. redux를 쓸 때 store는 하나이기 때문에, dispatch가 어떤 state와 연결되는지는 당연한 것인 듯.
 
         export default connect(null, mapDispatchToProps)(ExploreContainer);     // null: mapStateToProps 자리, 없으니 null
 
@@ -3306,15 +3308,24 @@ export default userSlice.reducer;
     이렇게 해주고 props가 출력되는 것을 보면, "getRooms"라는 함수가 있는 것을 알 수 있다. 이를 이제 이용
 
     (screens/Main/Explore/ExploreContainer.js)
-        import React, { useEffect } from "react";
+        import React, { useEffect } from "react";           
         import ExplorePresenter from "./ExplorePresenter";
 
-        export default ({ getRooms }) => {
+        export default ({ getRooms }) => {  // { getRooms }: 넘어온 object data 중에서 getRooms에 할당되어 있는 값을 의미
             useEffect(() => {               // component mount가 useEffect를 사용할 때마다 execute 될 것이다.
-                getRooms();                 // 이렇게 하면, 우리는 rooms들의 첫 묶음들을 fetch 하는 것이다.
-            }, []);
+                getRooms();                 // 이렇게 하면, 우리는 rooms들의 첫 묶음들을 fetch 하는 것이다. // useEffect가 실행해야 할 값을 첫 인자로 받는다(대표적으로 function)고 아는데 {} 묶여서 getRooms()를 받는가...? 그냥 getRooms는 mapDispatchToProps를 통해 넘어온 getRooms: ()=> dispatch(getRooms) 일텐데, getRooms()가 무엇을 가르키는지, 또는 return 하는지 정확히 파악 필요
+            }, []);                         // , [] 없어도 똑같지 않나...?
+            // console.log(getRooms);      // getRooms가 무엇인지 출력: getRooms가 함수라는 것이 출력 [Function getRooms]
+            // console.log(getRooms());    // getRooms 함수를 실행한 값 출력 Promise {"_U": 0, "_V": 0, "_W": null, "_X": null} 출력
             return <ExplorePresenter />;
         };
+
+    * useEffect(function, deps?):
+        https://xiubindev.tistory.com/100
+        useEffect는 리액트 컴포넌트가 렌더링 될 때마다 특정 작업을 실행할 수 있도록 하는 Hook
+        function: 수행하고자 하는 작업
+        deps: 배열 형태이며, 배열 안에는 검사하고자 하는 특정값 or 빈 배열
+
 
     (screens/Main/Explore/index.js)
         import ExploreContainer from "./ExploreContainer";
@@ -3328,8 +3339,8 @@ export default userSlice.reducer;
             };
         }
 
-        function mapStateToProps(state){
-            console.log(state.roomsReducer);
+        function mapStateToProps(state){        // roomsSlice를 보면, getRooms의 api.rooms()를 통해 room 정보를 api로 받아오고, state에는(const roomsSlice) room 정보를 담을 수 있게 빈 배열을 하나 추가한 상태. reducer에 action.payload.rooms를 push 해서 room 정보를 state에 넣어줄 것으로 알 수 있다.
+            console.log(state.roomsReducer);    // roomsSlice.js에 정의해준 room의 state가 출력(정확히는 state중 room에 대한 정보 출력) --> Object{"explore": Object{"page":1, "rooms": Array [],}, "favs": Array [],} 출력됨
             return {};
         }
 
@@ -3350,7 +3361,7 @@ export default userSlice.reducer;
         }
 
         function mapStateToProps(state){
-            return state.roomsReducer.explore;
+            return state.roomsReducer.explore;      
         }
 
         export default connect(mapStateToProps, mapDispatchToProps)(ExploreContainer);
@@ -3359,7 +3370,7 @@ export default userSlice.reducer;
         import React, { useEffect } from "react";
         import ExplorePresenter from "./ExplorePresenter";
 
-        export default ({ getRooms, rooms, page }) => {
+        export default ({ getRooms, rooms, page }) => {     // (screens/Main/Explore/index.js)에서 mapStateToProps를 통해 return 받은 값에 page, rooms가 있다. 이를 받아오자 
             useEffect(() => {               
                 getRooms();                 
             }, []);
@@ -3387,7 +3398,7 @@ export default userSlice.reducer;
             }
         });
 
-        const { setExploreRooms } = roomsSlice.actions;
+        const { setExploreRooms } = roomsSlice.actions;     // setExploreRooms는 actionCreator이다. actionCreator는 action이라고 우선 생각하고, toolkit 이용중이기 때문에 이 action에는 payload가 담긴다. payload는 아무거나, 여러개도 가능 아래에서 payload 담아줄것임
 
         export const getRooms = () => async dispatch => {
             try {
@@ -3409,6 +3420,13 @@ export default userSlice.reducer;
 
 
 # 9.4 Duplicate Bugfix
+    * login screen에 default value를 설정해주자 - SignInContainer에 default value를 설정해서 sign in 을 바로 할 수 있도록 해보자.
+
+    (screens/Auth/SignInContainer.js)
+        export default ({route: { params }}) => {
+            const dispatch = useDispatch();
+            const [email, setEmail] = useState(params?.email || "taltalrealty@naver.com");
+            const [password, setPassword] = useState(params?.password || "52848625a");
     
     (redux/roomsSlice.js)
         import { createSlice } from "@reduxjs/toolkit";
@@ -3447,9 +3465,9 @@ export default userSlice.reducer;
 
         export default roomsSlice.reducer;
 
-        rooms는 array 인데, rooms에 넣어주는 results가 array이다. array에 array를 넣어주는 것은 우리가 원하던 것이 아님, 이제 이를 고쳐볼 것이다
+        rooms는 array 인데, rooms에 넣어주는 results가 array이다. array에 array를 넣어주는 것은 우리가 원하던 것이 아님, 이제 array의 element를 push하도록 할것이다.
 
-    React Native Debugger 에서 우클릭해서 Log AsyncStorage content 확인 가능
+    React Native Debugger 에서 우클릭해서 Log AsyncStorage content 확인 가능 -> local storage에 있는 것들을 볼 수 있다.
     현재 state들을 망쳐놔서 아직은 활용이 어려움.
     log out을 하기 위해 Debugger에서 우클릭해서 Clear AsyncStorage 해준다 -> save 해서 새로고침하면 log out 되어있다.
 
@@ -3468,8 +3486,7 @@ export default userSlice.reducer;
             },
             reducers: {
                 setExploreRooms(state, action){
-                    action.payload.rooms.forEach(room => state.explore.rooms.push(room))    // rooms payload에 있는 모든 room을 state로 push
-                    // state.explore.rooms.push(action.payload.rooms);
+                    action.payload.rooms.forEach(room => state.explore.rooms.push(room))    // payload의 배열 rooms에 있는 모든 room을 state로 push
                     state.explore.page = action.payload.page;
                 }
             }
@@ -3491,18 +3508,8 @@ export default userSlice.reducer;
 
         export default roomsSlice.reducer;
 
-    * login screen에 default value를 설정해주자 - SignInContainer에 default value를 설정해서 sign in 을 바로 할 수 있도록 해보자.
-
-    (screens/Auth/SignInContainer.js)
-        export default ({route: { params }}) => {
-            const dispatch = useDispatch();
-            const [email, setEmail] = useState(params?.email || "taltalrealty@naver.com");
-            const [password, setPassword] = useState(params?.password || "52848625a");
-
-    이제 login을 하고 Debugger를 보면 rooms가 제대로 나온다...?
-    이것이 왜 중요하냐면,
-    우리의 핸드폰에 database가 있는 것과 같아서 우리의 핸드폰에 무엇이 들어가는지 조심할 필요가 있다
-     -> state.explore.rooms를 사용하는 대신에 다음과 같이 해보자
+    이제 새로고침(save말고 reload)하면, rooms들이 계속 추가된다. 같은 것이 반복되고 있는 것이기 때문에 수정해야함
+    이미 존재하는 data라면(room이라면) 추가하지 않도록 코드를 짜자
 
     (redux/roomsSlice.js)
         import { createSlice } from "@reduxjs/toolkit";
@@ -3521,7 +3528,7 @@ export default userSlice.reducer;
                 setExploreRooms(state, action){
                     const { explore: {rooms}} = state;
                     const { payload } = action;
-                    payload.rooms.forEach(room => rooms.push(room))     // 일단 체크할 것이 있는데 id를 가지고 있는 room이 입력되고 있고, room들의 database에 존재하는지를
+                    payload.rooms.forEach(room => rooms.push(room))    
                     // action.payload.rooms.forEach(room => state.explore.rooms.push(room))
                     // state.explore.rooms.push(action.payload.rooms);
                     state.explore.page = payload.page;
@@ -3546,9 +3553,10 @@ export default userSlice.reducer;
         export default roomsSlice.reducer;
 
     // 일단 체크할 것이 있는데 id를 가지고 있는 room이 입력되고 있고, room들의 database에 존재하는지를 -> 있으면 저장하지를 않을 것이다.
-    // 또는 array.find 라는 array의 method를 이용 해보자..?
+    // 또는 array.find 라는 array의 method를 이용 해보자
         array.find: array 안의 object를 찾아주는 method
         array.find method를 활용해서, 기존에 존재하는 방은 저장하지 않고, 새로운 방만 저장하도록 짜보자
+        특징은, 여러개가 찾아진다면, 전부가 아니라 첫번째 찾은 값을 return 한다.
     
     (redux/roomsSlice.js)
         import { createSlice } from "@reduxjs/toolkit";
@@ -3569,10 +3577,10 @@ export default userSlice.reducer;
                     const { payload } = action;
                     payload.rooms.forEach(payloadRoom => {
                         const exists = explore.rooms.find(savedRoom => savedRoom.id === payloadRoom.id)
+                        if(!exists){
+                            explore.rooms.push(payloadRoom);
+                        }
                     });
-                    if(!exists){
-                        explore.rooms.push(payloadRoom);
-                    }
                     state.explore.page = payload.page;
                 }
             }
@@ -3594,6 +3602,8 @@ export default userSlice.reducer;
 
         export default roomsSlice.reducer;
                     
+
+    * 이제 reload를 해도 debugger에서 rooms에 배정된 room의 개수가 10개로 유지되면 된 것(page 1개에 10개 담아오도록 설정해줬기 때문)
 
     * 위처럼 기존에 있는 것은 저장하지 않도록 하는 것은 중요하다
         내가 내 휴대폰에 뭐가 있는 것을 안다는 것은, 즉 self-contained database 라는 걸 알면, API에 의존하지 않을 수 있다.
@@ -3643,10 +3653,10 @@ export default userSlice.reducer;
         const Text = styled.Text``;
 
         export default ({rooms}) => {
-            if (rooms.length === 0) {       // 즉, user가 처음 방문했을 떄
+            if (rooms.length === 0) {       // user가 처음 방문했을 때는 받아온 room이 없을 것이다.
                 return (
                 <Container>
-                    <ActivityIndicator color ="blakc" />
+                    <ActivityIndicator color ="black" />
                 </Container>);
             } else {
                 return (
@@ -3700,7 +3710,6 @@ export default userSlice.reducer;
                 <ActivityIndicator color="black" />
                 ) : (
                 rooms.map(room => <Text>{room.name}</Text>)          이렇게 해서 room.name들이 표현되어야 하는데, 나는 room을 만들어줬는데도 안나타나는듯.... 왜?? 강의 중에 roomsSlice.js에서 rooms: [results] 라고 표현된 부분 있는데, results는 이미 array이기 때문에 rooms: results 라고 해야한다. array안에 array를 넣어서 안나온 것임 
-                // <Text>나</Text>
                 )}
             </Container>
             );
@@ -3725,7 +3734,9 @@ export default userSlice.reducer;
             name: Pt.string.isRequired,
             price: Pt.number.isRequired
         };
-    
+        
+        export default RoomCard;
+
     (screens/Main/Explore/ExplorePresenter.js)
         import React from "react";
         import { ActivityIndicator } from "react-native";
@@ -3762,6 +3773,9 @@ export default userSlice.reducer;
             );
         };
 
+
+    - 나는 아직 오류 뜨고 안됨
+    - C:\Users\User\Desktop\github\airbnb-native2\node_modules\react-native\Libraries\Core\ExceptionsManager.js:179 Error: RoomCard(...): Nothing was returned from render. This usually means a return statement is missing. Or, to render nothing, return null.
 
 # 9.6 RoomCard part Two
 

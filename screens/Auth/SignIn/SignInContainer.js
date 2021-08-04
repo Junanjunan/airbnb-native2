@@ -17,8 +17,8 @@ const InputContainer = styled.View`
 
 export default ({ route: { params }}) => {
     const dispatch = useDispatch();
-    const [email, setEmail] = useState(params?.email);
-    const [password, setPassword] = useState(params?.password);    
+    const [email, setEmail] = useState(params?.email || "jjj1305@hanmail.net");
+    const [password, setPassword] = useState(params?.password || "123");    
     const isFormValid = () => {
         if (email === "" || password === ""){
             alert("All fields are required.");
