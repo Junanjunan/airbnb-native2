@@ -3751,7 +3751,7 @@ export default userSlice.reducer;
 
         const Text = styled.Text``;
 
-        export default ({rooms}) => {
+        export default ({rooms}) => {                   // ()=>() 에는 그냥 하면되는데, ()=>{} 이라면 {} 안에 반드시 return 해주어야 한다.
             return(
             <Container>
                 {rooms.length === 0 ? (
@@ -3759,7 +3759,7 @@ export default userSlice.reducer;
                 ) : (
                 rooms.map(room => (
                     <RoomCard 
-                        key={room.id} 
+                        key={room.id}                // map을 쓸때는 key 값 필수로 있어야 하는 듯
                         name={room.name} 
                         price={room.price} 
                         photos={room.photos}
@@ -3822,7 +3822,8 @@ export default userSlice.reducer;
             font-size: 10px;
         `;
 
-        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => {
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => {       // ()=>() 에는 그냥 하면되는데, ()=>{} 이라면 {} 안에 반드시 return 해주어야 한다.
+            return(
             <Container>
                 {isSuperHost ? (
                     <Superhost>
@@ -3834,6 +3835,7 @@ export default userSlice.reducer;
                     <PriceNumber>{price}</PriceNumber><PriceText>/night</PriceText>
                 </PriceContainer>
             </Container>
+            )
         }
 
         RoomCard.protoTypes = {
@@ -4084,6 +4086,8 @@ export default userSlice.reducer;
     실행할 때는 python webp2.jpeg.py 로 실행하면 됨
     잘 작동하는지 확인하기 위해서 print(im) 등 넣어보면 됨
 
+    ** 이거 안해줘도 나는 오류 안뜨고 되는 듯
+
 
 # 9.9 Bugfix
     github.com/leecade/react-native-swiper 에서 pagination을 보면, 다양한 기능들을 볼 수 있다. autoplay를 넣으면 사진 자동 넘김
@@ -4140,7 +4144,7 @@ export default userSlice.reducer;
                 {rooms.length === 0 ? (
                 <ActivityIndicator color="black" />
                 ) : (
-                <>
+                <>                  // Fragment. Fragment로 안감싸주니 Unexpected token이라고 뜨며 실행 안됨
                 <FakeBar>
                     <FakeText>Search..</FakeText>
                 </FakeBar>
@@ -4191,11 +4195,11 @@ export default userSlice.reducer;
 
     (screens/Main/Explore/ExploreContainer.js)
         ...
-        export default ({ getRooms, rooms, page increasePage}) => {
+        export default ({ getRooms, rooms, page, increasePage}) => {
             useEffect(() => {               
-                getRooms(page);             
+                getRooms(page);                                     // useEffect - page가 변할때마다, 변한 page 값으로 getRooms()를 하자
             }, [page]);
-            return <ExplorePresenter rooms={rooms} increasePage />; 
+            return <ExplorePresenter rooms={rooms} increasePage={increasePage} />; 
         };
 
     (screens/Main/Explore/index.js)
@@ -4283,7 +4287,10 @@ export default userSlice.reducer;
         ...
 
 
-    분명히 불러와지는거 같기도 한데, 안됨....
+    여기까지 하고 Load More를 클릭하면 추가적으로 room을 볼러온다.
+
+    현재 문제는, 새로고침을 해도 새로운 room을 얻어 오지 않고 모바일에 저장해둔 room을 그대로 가져온다는 것이다.
+    우리가 persist 하고 싶은 것은 user의 login 상태나 token, favourite 같은 것들인데, 접속할 때마다 새로워야 할 explore의 room 정보마저 persist하게 된다. 이건 우리가 원하는 것 X
 
 
 # 9.11 Load More Bug Fix
@@ -4291,7 +4298,7 @@ export default userSlice.reducer;
         import React, { useEffect, useState } from "react";
         import ExplorePresenter from "./ExplorePresenter";
 
-        export default ({ getRooms, rooms,}) => {
+        export default ({ getRooms, rooms }) => {       // page, increasePage를 redux로부터 건네받지 않고, 여기서 정의해서 쓸거니 지워준다.
             const [page, setPage] = useState(1);
             const increasePage = () => setPage(prev => prev +1);
             useEffect(() => {               
@@ -4310,8 +4317,8 @@ export default userSlice.reducer;
     import ExplorePresenter from "./ExplorePresenter";
 
     export default ({ getRooms, rooms, page, increasePage }) => {
-        useEffect(() => {
-            getRooms(1);
+        useEffect(() => {       // 한번만 실행될 useEffect
+            getRooms(1);        
         }, [])
         useEffect(() => {               
             getRooms(page);             
@@ -4319,7 +4326,6 @@ export default userSlice.reducer;
         return <ExplorePresenter rooms={rooms} increasePage={increasePage} />; 
     };
     
-    원래대로 해준 후에
 
     (redux/roomsSlice.js)
         import { createSlice } from "@reduxjs/toolkit";
@@ -4338,7 +4344,7 @@ export default userSlice.reducer;
                 setExploreRooms(state, action){
                     const { explore } = state;
                     const { payload } = action;
-                if(payload.page === 1){
+                if(payload.page === 1){                         // payload로 받는 page=1 이면 payload에서 room들을 가져와서 room들에 대한 정보를 새로 받아서 refresh하는 것 (모바일에 저장되어있는 room 출력하는게 아니라)
                     state.explore.rooms = payload.rooms;
                     state.explore.page = 1;
                 } else{
@@ -4397,7 +4403,7 @@ export default userSlice.reducer;
                     state.explore.rooms = payload.rooms;
                     state.explore.page = 1;
                 } else{
-                    state.explore.rooms = [...state.explore.rooms, ...payload.rooms];
+                    state.explore.rooms = [...state.explore.rooms, ...payload.rooms]; // state.explore.rooms 와 payload.rooms를 합친것과 같은 효과 -> 중복된 것들을 체크하는 코드를 쓰지 않아도 됨
                 }
                 },
                 increasePage(state, action){
@@ -4512,7 +4518,7 @@ export default userSlice.reducer;
     Realm Database에 대해 알아보자
         핸드폰에 database가 있는 것처럼 느끼게 emulate 해준다.
         redux 대신에 쓸 수 있다? 특히 redux persist?
-        로딩 화면이 나타나는 것을 좀 더 해결하는 방법? redux 대신에?
+        로딩 화면이 나타나는 것을 좀 더 해결하는 방법? redux 대신에? redux persist 쓰는 것보다 더 빨라서 유저들이 로딩 화면을 더 안볼 수 있게 할 수 있다 함
 
 
 # 9.13 React Native Web Swiper

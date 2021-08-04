@@ -12,32 +12,31 @@ const roomsSlice = createSlice({
     },
     reducers: {
         setExploreRooms(state, action){
-            const {
-                explore
-            } = state;
             const { payload } = action;
-            payload.rooms.forEach(payloadRoom => {
-                const exists = explore.rooms.find(savedRoom => savedRoom.id === payloadRoom.id);
-                if (!exists){
-                    explore.rooms.push(payloadRoom);
-                }
-            });
-            state.explore.page = payload.page;
+            if (payload.page === 1){
+                state.explore.rooms = payload.rooms;
+                state.explore.page =1;
+            } else{
+                state.explore.rooms = [...state.explore.rooms, ...payload.rooms];
+            }
+        },
+        increasePage(state, action){
+            state.explore.page += 1;
         }
     }
 });
 
-const { setExploreRooms } = roomsSlice.actions;
+export const { setExploreRooms, increasePage } = roomsSlice.actions;
 // setExploreRooms는 actionCreator이다. actionCreator는 payload만 넣어주면 action이 된다고 우선 생각하고, toolkit 이용중이기 때문에 이 action에는 payload가 담긴다. payload는 아무거나, 여러개도 가능 아래에서 payload 담아줄것임
-export const getRooms = () => async dispatch => {
+export const getRooms = (page) => async dispatch => {
     try{
-        const {data: { results } } = await api.rooms();
+        const {data: { results } } = await api.rooms(page);
         dispatch(setExploreRooms({
             rooms: results,
-            page:1
+            page
         }))
     } catch(e){
-
+        console.warn(e);
     }
 }
 
