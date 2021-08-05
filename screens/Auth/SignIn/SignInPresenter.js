@@ -16,7 +16,9 @@ const InputContainer = styled.View`
     margin-bottom: 30px;
 `;
 
-export default ({email, setEmail, password, setPassword, handleSubmit}) => (
+export default ({email, setEmail, password, setPassword, handleSubmit}) => {
+        console.log(setPassword);
+        return(
         <DismissKeyboard>
         <Container>
             <StatusBar barStyle="light-content" />
@@ -30,10 +32,11 @@ export default ({email, setEmail, password, setPassword, handleSubmit}) => (
                 <Input 
                     value={password} 
                     placeholder="Password" 
+                    isPassword={true}
                     stateFn={setPassword}    
                 />
             </InputContainer>
             <Btn text={"Sign In"} accent onPress={handleSubmit} />
         </Container>
-        </DismissKeyboard>
-    );
+        </DismissKeyboard>);
+    };

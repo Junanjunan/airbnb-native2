@@ -2,15 +2,18 @@ import React from "react";
 import styled from "styled-components/native";
 
 const Container = styled.View`
-    flex: 1;
-    justify-content: center;
-    align-items: center;
+margin-top: 40px;
+padding: 0px 30px;
 `;
 
-const Text = styled.Text``;
+const SV = styled.ScrollView`
+`;
+
+const Title = styled.Text``;
 
 export default () => (
     <Container>
-        <Text>Saved</Text>
+        <Title>Favourites</Title>
+        <SV></SV>
     </Container>
 );

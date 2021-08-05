@@ -1429,11 +1429,20 @@ export default userSlice.reducer;
                 placeholder={placeholder} 
                 secureTextEntry={isPassword ? true: false} 
                 autoCapitalize={autoCapitalize}
-                onChangeText = {(text) => stateFn(text)}                // setUsername, setPassword를 안쓰고 웬 stateFn? 검색도 안되는데 웬 stateFn?...
+                onChangeText = {(text) => stateFn(text)}    // setUsername, setPassword를 안쓰고 웬 stateFn? 검색도 안되는데 웬 stateFn?... 답변: stateFn is just a prop created by us :)
+                                                            // 즉, stateFn은 우리가 만들어 준 prop으로 태그에 들어갈 것을 직접 만들 수 있음을 배운것.
+                                                            // (components/Auth/Input.js)에서 Input을 통해 들어간 stateFn 함수가 Input안에 정의한 Container에 있는 onChangeText 에 return값을 반환해준다. 반환되는 return 값에 따라 onChangeText 효과가 나타난다. stateFn이 어떤 함수인지에 대한 정의는 아직 안해줬다.
+                                                            // SignIn.js에서 Input을 호출해서 사용하는데, 여기서 stateFn을 setPassword라 정의해준 것(console.log(setPassword) 해보면 [Function bound dispatchAction]이라 나옴. 즉 function임)
             />
         );
 
         export default Input;
+
+    // onChangeText: 입력된 텍스트가 변할 때마다 호출되는 prop.
+    // text가 변할 때마다 stateFn(text)를 통해서 text가 변하도록 한 것.
+    // stateFn이라는 함수는 SignIn에서 Input을 호출해서 정의해준 것(setPassword로)
+    // 즉, stateFn이 다리 역할을 해서, Input.js의 Input과 SignIn.js의 setPassword가 연결된 것
+    // 결국 onChangeText={(text) =>setPassword(text)} 가 되도록 만든 것임
 
     위 Input을 SignIn에 사용해보자
     (screens/Auth/SignIn.js)
@@ -4776,3 +4785,190 @@ export default userSlice.reducer;
     
     -> Array [] 가 출력. 즉, user는 favs를 갖고 있지 않은 상태
         다음 강의에서 room을 favs에 추가하는 것 하자
+
+
+# 10.1 Toggle Favs part One
+
+    우선 버튼 만들어주자
+    (components/RoomCard.js)
+        ...
+        import { Ionicons } from "@expo/vector-icons";
+        import utils from "../utils";
+        ...
+        const Container = styled.View`
+        width: 100%;
+        margin-bottom: 50px;
+        align-items: flex-start;
+        position: relative;
+        `;
+
+        const FavButton = styled.View`
+        background-color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 15px;
+        justify-content: center;
+        align-items: center;
+        `;
+
+        const TOpacity = styled.TouchableOpacity`
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        z-index: 10;
+        `;
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => (
+            <Container>
+                <TOpacity>
+                    <FavButton>
+                        <Ionicons size={15} name={utils.isAndroid() ? "md-heart-outline" : "ios-hear-empty"} />
+                    </FavButton>
+                </TOpacity>
+                <PhotosContainer>
+        ...
+    
+    (redux/usersSlice.js)
+        ...
+        export const toggleFav = (roomId) => async(dispatch, getState) => {     // airbnb-api를 보면 togglefavs()에 permission이 있다. user가 필요하고 따라서 로그인이 되어있어야 한다. 그리고 user의 id를 받아야 한다. getState로부터 id, token을 받아올 것임
+            const {usersReducer: {id, token}} = getState();
+            console.log(id, token);
+        }
+
+        export default userSlice.reducer;
+
+    이제 dispatch에 접근할 수 있어야 한다.
+    (components/RoomCard.js)
+        ...
+        import { useDispatch } from "react-redux";
+        import { toggleFav } from "../redux/usersSlice";
+        ...
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => {
+            const dispatch = useDispatch();
+            return (
+                <Container>
+                    <TOpacity onPress={() => dispatch(toggleFav(id))}>
+                        <FavButton>
+                            <Ionicons size={15} name={utils.isAndroid() ? "md-heart-outline" : "ios-hear-empty"} />
+                        </FavButton>
+        ...
+
+    이제 하트버튼을 눌러주면 room id, user id, user token 값이 출력
+    이제 request를 만들 준비가 된것임
+
+
+# 10.2
+    (api.js)
+        import axios from "axios";
+
+        const callApi = async (method, path, data, jwt) => {
+            const headers = {
+                Authorization: `Bearer ${jwt}`,  // togleFavs를 하기 위해서, Authorization: jwt를  `Bearer ${jwt}`로 바꿔줘야 함. airbnb-api에서 authentication.py를 보면 token을 x-token asdsasss 이런식으로 x-token뒤에 token을 보내는 것을 확인 가능
+                "Content-Type": "application/json"
+            };
+            const baseUrl = "http://ba81ae1beb69.ngrok.io/api/v1";
+            const fullUrl = `${baseUrl}${path}`;
+            if(method === "get" || method === "delete"){
+                return axios[method](fullUrl, {headers});
+            } else{   
+                return axios[method](fullUrl, data, {headers});
+            }
+        };
+
+        export default {
+            createAccount: form => callApi("post", "/users/", form),
+            login: form => callApi("post", "/users/login/", form),
+            rooms: (page=1) => callApi("get", `/rooms/?page=${page}`),
+            favs: (id) => callApi("get", `/users/${id}/favs`),
+            togleFavs: (userId, roomId, token) => callApi("put", `/users/${userId}/favs/`, { pk: roomId }, token )  // path 마지막에 /있고 없고 차이 큼. /있는 걸로 만들었다면 꼭 넣도록. 안그러면 오류 발생
+        };
+
+        // airbnb-api에서 users/views.py를 보면, toogle_favs가 put 인것 확인.
+        // python 코드(airbnb-api)를 보면, 데이터를 입력해야함(usersViewSet의 toggle_favs에서 pk=request.data.get("pk", None) 부분을 가리킴) 즉, request에 data가 있다. data의 이름은 pk로 하자
+        // token도 필요, airbnb-api에서 authentication.py를 보면 token을 x-token asdsasss 이런식으로 x-token뒤에 token을 보내는 것을 확인 가능
+        // Authorization: jwt를  `Bearer ${jwt}`로 바꿔줘야 함
+
+    (redux/usersSlice.js)
+        ...
+        export const toggleFav = roomId => async (dispatch, getState) => {     // airbnb-api를 보면 togglefavs()에 permission이 있다. user가 필요하고 따라서 로그인이 되어있어야 한다. 그리고 user의 id를 받아야 한다. getState로부터 id, token을 받아올 것임
+            const {usersReducer: {id, token}} = getState();                     // id는 user의 id, 인자로 받는 roomId는 room의 id 의미
+            try{
+                const { status } = await api.toggleFavs(id, roomId, token);
+                console.log(status);
+            } catch(e) {
+                console.warn(e);
+            }
+        };
+
+    이렇게 해주고 fav 버튼 눌러주면, explore 화면에서는 200이 떠야하고, saved 화면 클릭하면, 넘어온 data가 console.log를 통해 출력됨 (한번만 됨)
+
+    계속 진행
+    (screens/Main/Saved/SavedPresenter.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+        margin-top: 40px;
+        padding: 0px 30px;
+        `;
+
+        const SV = styled.ScrollView`
+        `;
+
+        const Title = styled.Text``;
+
+        export default () => (
+            <Container>
+                <Title>Favourites</Title>
+                <SV></SV>
+            </Container>
+        );
+
+    * roomsSlice.js로 가서, setFavs를 만들고, usersSlice.js에서 호출하고, getFavs에서 dispatch를 하자
+    (redux/roomsSlice.js)
+        
+        const roomsSlice = createSlice({
+            name: "rooms",
+            initialState: {
+                explore: {
+                    page: 1,
+                    rooms: []
+                },
+                favs: []
+            },
+            reducers: {
+                setExploreRooms(state, action){
+                    const { payload } = action;
+                    if (payload.page === 1){
+                        state.explore.rooms = payload.rooms;
+                        state.explore.page =1;
+                    } else{
+                        state.explore.rooms = [...state.explore.rooms, ...payload.rooms];
+                    }
+                },
+                increasePage(state, action){
+                    state.explore.page += 1;
+                },
+                setFavs(state, action){
+                    state.favs = action.payload;
+                }
+            }
+        });
+
+        export const { setExploreRooms, increasePage, setFavs } = roomsSlice.actions;
+        ...
+
+    (redux/usersSlice.js)
+        import { setFavs } from "./roomsSlice";
+        ...
+        export const getFavs = () => async (dispatch, getState) => {
+            const { usersReducer: {id} } = getState();
+            try {
+                const {data} = await api.favs(id);
+                dispatch(setFavs(data));
+            } catch(e){
+                console.warn(e);
+            }
+        };
+
+    해주고 debugger를 통해 확인 -> 처음에 fav 버튼 몇개 누르고 saved 이동하면 favs가 생긴것 확인 가능한데, refresh 하기 전에 다시 explore에서 fav 하면 saved 들어와도 변동 없음... useEffect 처음에 한번 작동하게 해놔서 그런거 같음
