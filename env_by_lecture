@@ -4857,13 +4857,13 @@ export default userSlice.reducer;
     이제 request를 만들 준비가 된것임
 
 
-# 10.2
+# 10.2 Toggle Favs part Two
     (api.js)
         import axios from "axios";
 
         const callApi = async (method, path, data, jwt) => {
             const headers = {
-                Authorization: `Bearer ${jwt}`,  // togleFavs를 하기 위해서, Authorization: jwt를  `Bearer ${jwt}`로 바꿔줘야 함. airbnb-api에서 authentication.py를 보면 token을 x-token asdsasss 이런식으로 x-token뒤에 token을 보내는 것을 확인 가능
+                Authorization: `Bearer ${jwt}`,  // toggleFavs를 하기 위해서, Authorization: jwt를  `Bearer ${jwt}`로 바꿔줘야 함. airbnb-api에서 authentication.py를 보면 token을 x-token asdsasss 이런식으로 x-token뒤에 token을 보내는 것을 확인 가능
                 "Content-Type": "application/json"
             };
             const baseUrl = "http://ba81ae1beb69.ngrok.io/api/v1";
@@ -4972,3 +4972,535 @@ export default userSlice.reducer;
         };
 
     해주고 debugger를 통해 확인 -> 처음에 fav 버튼 몇개 누르고 saved 이동하면 favs가 생긴것 확인 가능한데, refresh 하기 전에 다시 explore에서 fav 하면 saved 들어와도 변동 없음... useEffect 처음에 한번 작동하게 해놔서 그런거 같음
+
+
+# 10.3 Saved Screen part One
+
+    (screens/Main/Saved/index.js)
+        import { connect } from "react-redux";
+        import { getFavs } from "../../../redux/usersSlice";
+        import SavedContainer from "./SavedContainer";
+
+        function mapStateToProps(state){
+            return { rooms: state.roomsReducer.favs };
+        }
+
+        function mapDispatchToProps(dispatch){
+            return {
+                getFavs: () => dispatch(getFavs())
+            }
+        };
+
+        export default connect(mapStateToProps, mapDispatchToProps)(SavedContainer);
+
+    (screens/Main/Saved/SavedContainer)
+        import React, { useEffect } from "react";
+        import SavedPresenter from "./SavedPresenter";
+
+        export default ({ getFavs, rooms }) => {
+            useEffect(() => {
+                getFavs();
+            }, []);
+            return <SavedPresenter rooms={rooms} />;
+        }
+
+    (screens/Main/Saved/SavedPresenter.js)
+        import React from "react";
+        import styled from "styled-components/native";
+        import RoomCard from "../../../components/RoomCard";
+
+        const Container = styled.View`
+        margin-top: 10px;
+        padding: 0px 30px;
+        `;
+
+        const SV = styled.ScrollView``;
+
+        const Title = styled.Text`
+        font-size: 25px;
+        margin-bottom: 10px;
+        `;
+
+        const NoFavs = styled.Text``;
+
+        const Test = styled.Text``;
+
+        export default ({rooms}) => (
+            <Container>
+                <Title>Favourites</Title>
+                <SV 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{paddingBottom:5}}
+                    >{rooms.length !== 0 ? (
+                        rooms.map(room => (
+                            <RoomCard
+                                key={room.id}
+                                name={room.name} 
+                                price={room.price}
+                                photos={room.photos} 
+                                id={room.id} 
+                                isFav={room.is_fav}
+                                isSuperHost={room.user.superhost}
+                            />
+                        )) 
+                    ) : (
+                    <NoFavs>You don't have any favourites</NoFavs>
+                    )}
+                </SV>
+            </Container>
+        );
+
+    이렇게 해주면 이제 saved에도 사진이랑 룸 정보들이 뜬다.
+    만약 이미지가 안뜬다면, airbnb-api로 가서 (users/views.py)의 UsersViewset에서 serializer에 context={"request":request}가 있는지 체크.
+    serializer = RoomSerializer(user.favs.all(), many=True, context={"request":request}).data 이렇게!
+    안 그러면 debugger를 볼 때 image의 file이 "http://127.0.~" 등의 full path 를 갖지 않고, 상대경로로 준다. (/로 시작하는)
+    full path를 주기 위해서 (우리가 원하는 방식으로 이미지를 불러오기 위해서) context를 serializer에 줘야한다.
+
+    (components/RoomCard.js)
+        ...
+        <Ionicons 
+            size={15} 
+            name={utils.isAndroid() ? "md-heart-outline" : "ios-hear-empty"} 
+            color={isFav ? colors.red : "black"}
+            />
+        ...
+    위와 같이 하면 saved의 heart 색이 빨강으로 변하길 기대했는데 안됨
+    RoomCard.js에서 isFav를 받지 못하고 있는데, 왜 그런지를 살펴보자.(다음강의)
+
+
+# 10.4 Saved Screen part Two
+
+    RoomCard.js에서 isFav를 받지 못하는 이유
+        (redux/usersSlice.js)의 getFavs를 보면 id로만 favs를 받고 있다. 
+        방을 fav 했는지 아닌지 등에 대한 구체적인 정보를 알려면 api에서 token을 가지고 request 해야한다.
+
+    (api.js)
+        export default {
+            createAccount: form => callApi("post", "/users/", form),
+            login: form => callApi("post", "/users/login/", form),
+            rooms: (page=1, token) => callApi("get", `/rooms/?page=${page}`, null, token),
+            favs: (id, token) => callApi("get", `/users/${id}/favs/`, null, token),
+            toggleFavs: (userId, roomId, token) => callApi("put", `/users/${userId}/favs/`, { pk: roomId }, token)
+        };
+
+    (redux/usersSlice.js)
+        ...
+        export const getFavs = () => async (dispatch, getState) => {
+            const { usersReducer: {id, token} } = getState();
+            try {
+                const {data} = await api.favs(id, token);
+                dispatch(setFavs(data));
+            } catch(e){
+                console.warn(e);
+            }
+        };
+        ...
+
+    (redux/roomsSlice.js)
+        ...
+        export const getRooms = (page) => async (dispatch, getState) => {
+            const {usersReducer: {token}} = getState();
+            try{
+                const {data: { results } } = await api.rooms(page, token);
+                dispatch(setExploreRooms({
+                    rooms: results,
+                    page
+                }))
+            } catch(e){
+                console.warn(e);
+            }
+        }
+        ...
+
+    위와 같이만 하면, token을 가지고 user가 fav한 방인지 아닌지 표시 가능
+    icon에 대한 설정 추가해보자(나는 강의와 다르게 함)
+    
+    나:
+    (components/RoomCard.js)
+        ...
+        <FavButton>
+            <Ionicons 
+                size={15} 
+                name={utils.isAndroid() ? (isFav ? "md-heart" : "md-heart-outline") : (isFav ? "ios-heart": "ios-heart-empty")} 
+                color={isFav ? colors.red : "black"}
+                />
+        </FavButton>
+        ...
+    
+    강의
+    (components/RoomCard.js)
+
+        function getIconName(isFav){
+            const isAndroid = utils.isAndroid();
+            if (isAndroid){
+                if(isFav){
+                    return "md-heart"
+                }
+                return "md-heart-outline"
+            } else {
+                if(isFav){
+                    return "ios-heart"
+                }
+                return "ios-heart-empty"
+            }
+        }
+
+        <FavButton>
+            <Ionicons 
+                size={15} 
+                name={getIconName(isFav)}
+                color={isFav ? colors.red : "black"}
+                />
+        </FavButton>
+
+
+# 10.5 Updating the View
+
+    usersSlice.js의 toggleFav를 보면, 백엔드에만 업데이트 하고 있고, redux, 프론트엔드에는 업데이트 하지 않은 상태이다.
+    
+    현재 fav 누르고 다시 눌렀을 때 취소가 안되는 상황.
+    즉 toggle이 되도록 만들자
+
+    (redux/roomsSlice.js)
+            ...
+            setFavs(state, action){
+                state.favs = action.payload;
+            },
+            setFav(state, action){
+                const {
+                    payload: { roomId }
+                } = action;
+            }
+            ...
+        export const { setExploreRooms, increasePage, setFavs, setFav } = roomsSlice.actions;
+
+    (redux/usersSlice.js)
+        import { setFav, setFavs } from "./roomsSlice";
+        
+        export const toggleFav = roomId => async (dispatch, getState) => {     // airbnb-api를 보면 togglefavs()에 permission이 있다. user가 필요하고 따라서 로그인이 되어있어야 한다. 그리고 user의 id를 받아야 한다. getState로부터 id, token을 받아올 것임
+            const {usersReducer: {id, token}} = getState();                     // id는 user의 id, 인자로 받는 roomId는 room의 id 의미
+            try{
+                const { status } = await api.toggleFavs(id, roomId, token);
+                dispatch(setFav({ roomId }));       // 좋다고 표시한 room의 id를 알아야 하기때문에 roomId를 인자로 받는다
+                console.log(status);
+            } catch(e) {
+                console.warn(e);
+            }
+        };
+
+    (redux/roomsSlice.js)
+            ...
+            setFav(state, action){
+                const {
+                    payload: { roomId }
+                } = action;
+                const room = state.explore.rooms.find(room => room.id === roomId);
+                if(room){
+                    if(room.is_fav){
+                        room.is_fav = false;
+                        state.favs = state.favs.filter(room => room.id !== roomId);
+                    } else {
+                        room.is_fav = true;
+                        state.favs.push(room);
+                    }
+                }
+            }
+            ...
+
+
+# 10.6 Amazing Recap
+
+    room을 fav로 지정하면 saved로 넘어가는게 왜 이리 쉬울까?
+    room.is_fav를 true 나 false로 수정하는 것만으로 작동되는 것은
+    redux toolkit의 장점 때문이다.
+    toolkit을 통해 state를 변경해줌으로써 간단해진 것. 이게 아니면 모두 수동으로 해야한다 함.
+
+    좀 더 업그레이드 해보자.
+
+    (redux/roomsSlice.js)
+        ...
+        setFav(state, action){
+            const {
+                payload: { roomId }
+            } = action;
+            const room = state.explore.rooms.find(room => room.id === roomId);
+            if(room){
+                if(room.is_fav){
+                    room.is_fav = false;
+                    state.favs = state.favs.filter(room => room.id !== roomId);
+                } else {
+                    room.is_fav = true;
+                    // state.favs.push(room);
+                    state.favs = [room, ...state.favs]; // 새로 추가되는 순서대로 위에 오도록 한 것
+                }
+            }
+        }
+        ...
+
+
+## 11 ROOM DETAIL
+
+# 11.0 Room Detail part One
+
+    방의 상세페이지를 만들건데, 탭을 덮었으면 한다. 이때는 stack navigator가 필요
+
+    우선, Room을 하나 만들자
+    (screens/Main/Room.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default () => (
+            <Container>
+                <Text>Room</Text>
+            </Container>
+        );
+
+    (navigation/Main.js)
+        import React from "react";
+        import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+        import { createStackNavigator } from "@react-navigation/stack";
+        import { Ionicons } from "@expo/vector-icons";
+        import Explore from "../screens/Main/Explore";
+        import MapScreen from "../screens/Main/Map";
+        import Saved from "../screens/Main/Saved";
+        import Profile from "../screens/Main/Profile";
+        import colors from "../colors";
+        import utils from "../utils";
+        import Room from "../screens/Main/Room";
+
+
+        const TabsNavigator = createBottomTabNavigator();
+        // const Main = createMaterialTopTabNavigator();
+
+        const Tabs = () => (
+            <TabsNavigator.Navigator
+                screenOptions={({route}) =>({
+                    tabBarActiveTintColor: colors.red,
+                    tabBarIcon: ({focused}) => {
+                        const isAndroid = utils.isAndroid();
+                        let iconName = `${isAndroid ? "md-" : "ios-"}`;
+                        if (route.name === "Explore") {
+                            iconName += "search";
+                            } else if (route.name === "Saved") {
+                                iconName += "heart";
+                            } else if (route.name === "Map") {
+                                iconName += "map";
+                            } else if (route.name === "Profile") {
+                                iconName += "person";
+                            }
+                        return <Ionicons name={iconName} size={20} color={focused ? colors.red : "gray"} />
+                    }
+                })
+                }
+            >
+                <TabsNavigator.Screen name="Explore" component={Explore} />
+                <TabsNavigator.Screen name="Saved" component={Saved} />
+                <TabsNavigator.Screen name="Map" component={MapScreen} />
+                <TabsNavigator.Screen name="Profile" component={Profile} />
+            </TabsNavigator.Navigator>
+        );
+
+        const MainNavigator = createStackNavigator();
+
+        export default () => (
+            // <MainNavigator.Navigator mode="modal" screenOptions={{ headerBackTitleVisible: false }}> headerBackTitleVisible true로 해야 변경됨. false가 default
+            <MainNavigator.Navigator>
+                <MainNavigator.Screen name="tabs" component={Tabs} options={{headerShown: false}} />
+                <MainNavigator.Screen name="RoomDetail" component={Room} />
+            </MainNavigator.Navigator>
+            
+        );
+
+    이제 RoomCard와 Room 화면 사이에 링크를 만들자
+    (components/RoomCard.js)
+        import { useNavigation } from "@react-navigation/native";
+
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price}) => {
+            const dispatch = useDispatch();
+            const navigation = useNavigation();
+            return (
+                <TouchableOpacity onPress={() => navigation.navigate("RoomDetail")}>
+                    <Container>
+                    ...
+                    </Container>
+                </TouchableOpacity>
+            );
+        }
+        ...
+
+    이제 방을 클릭 하면, RoomDetail로 이동, 밑에 tab들을 모두 덮는 화면인 것도 확인
+
+
+# 11.1 Room Detail part Two
+
+    (components/RoomCard.js)
+        ...
+        <TouchableOpacity onPress={() => navigation.navigate("RoomDetail", { id })}>
+            <Container>
+        ...
+
+    (screens/Main/Room.js)
+        export default ({route}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            console.log(route)
+            return (
+                <Container>
+                    <Text>Room</Text>
+                </Container>
+            );
+        }
+
+    방을 클릭하고 출력 내용을 보면 다음과 같이 id 까지 건네받아서 어떤 room을 클릭했는지 알 수 있다.
+        Object {
+        "key": "RoomDetail-k8g7smq6iwZxcNhmhXI6R",
+        "name": "RoomDetail",
+        "params": Object {
+            "id": 2,
+        },
+        }
+    이제 id 값 이용해서 detail 작성하면 됨
+    이라고 하면 안됨
+    id 값만을 이용해서 가져온다는 생각은, reducer를 통해서 가져온다는 의미인데, 
+    explore를 통해서 room을 클릭했을 때와, saved를 통해서 room을 클릭했을 때, 또 나중에는 map에서 room을 클릭했을 때,
+    각각 다른 reducer에서 room을 찾아오게 된다.
+    이건 좋지 않다고 함.
+    그러니 room object 자체를 전달하는게 좋다고 함
+    -> RoomCard component에서 id만 보내지 말고 다른 요소들도 직접 보내서 이용하자. (api로 받을 수 있는 모든 정보를 object로 받아오고 있으니 이를 이용하자...)
+    
+    (screens/Main/Explore/ExplorePresenter.js)에서 prop을 하나 더 입력해서 room 전체를 모두 보내자
+    Saved에도 똑같이 해주자
+        <RoomCard
+            key={room.id}
+            name={room.name} 
+            price={room.price}
+            photos={room.photos} 
+            id={room.id} 
+            isFav={room.is_fav}
+            isSuperHost={room.user.superhost}
+            roomObj={room}
+        />
+
+    RoomCard에도 prop을 추가
+    (components/RoomCard.js)
+        const RoomCard = ({id, isFav, isSuperHost, photos, name, price, roomObj}) => {
+            const dispatch = useDispatch();
+            const navigation = useNavigation();
+            return (
+                <TouchableOpacity onPress={() => navigation.navigate("RoomDetail", { ...roomObj })}>    // roomObj 안에 있는 모든 것 전달
+                    <Container>
+                    ...
+
+    Room.js에서 params를 출력해보면
+    (screens/Main/Room.js)
+        export default ({route: {params}}) => { 
+            console.log(params)
+            return (
+                <Container>
+                    <Text>Room</Text>
+                </Container>
+            );
+        }
+
+    클릭한 room에 대한 모든 정보를 받아옴을 확인 가능
+    이미 받아온 room object를 이용했기 때문에 API를 건드릴 필요도 없었다.
+
+
+# 11.2 Room Detail part Three
+
+    현재는 store에 room obj를 모두 갖고 있기 때문이고, 그렇지 않은 경우에는 room id를 이용해서 더 많은 data를 받기 위해 API를 거쳐야 한다. 
+
+    (screens/Main/Room.js)
+        ...
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <Text>Room</Text>
+                </Container>
+            );
+        }
+
+    * RoomCard.js에 있는 PhotoContainer에 해당하는 부분을 component로 만들어서 이용해주자
+    (components/RoomPhotos.js) 생성
+        import React from "react";
+        import styled from "styled-components/native";
+        import Pt from "prop-types";
+        import Swiper from "react-native-swiper";
+        import { Dimensions } from "react-native";
+
+        const {width, height} = Dimensions.get("screen");
+
+        const PhotosContainer = styled.View`
+        margin-bottom: 10px;
+        overflow: hidden;
+        background-color: red;
+        width: 100%;
+        height: ${height/4}px;
+        `;
+
+        const SlideImage = styled.Image`
+        width: 100%;
+        height: 100%;
+        `;
+
+        const RoomPhotos = ({photos}) => (          // photos는 prop이기 때문에 {photos} 안에 담겨야 한다.
+            <PhotosContainer> 
+                {photos.length === 0 ? 
+                <SlideImage resizeMode="repeat" source={require("../assets/roomDefault.jpg")} />
+                :
+                <Swiper>
+                    {photos.map(photo => (
+                        <SlideImage key={photo.id} source={{ uri: photo.file }} />
+                    ))}
+                </Swiper> 
+                }
+            </PhotosContainer>
+        );
+
+
+        RoomPhotos.propTypes = {
+            photos: Pt.arrayOf(
+                Pt.shape({
+                    file: Pt.string
+                })
+            )
+        };
+
+        export default RoomPhotos
+
+    만든 component를 가지고 roomDetail에서 이용하자
+    (screens/Main/Room.js)
+        import React, { useEffect } from "react";
+        import styled from "styled-components/native";
+        import RoomPhotos from "../../components/RoomPhotos";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <RoomPhotos photos={params.photos} />
+                </Container>
+            );
+        }
+
+
+# 11.3 Styling Room Detail part One

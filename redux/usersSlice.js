@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import api from "../api";
-import { setFavs } from "./roomsSlice";
+import { setFav, setFavs } from "./roomsSlice";
 
 const userSlice = createSlice({
     name:"users",
@@ -35,9 +35,9 @@ export const userLogin = (form) => async dispatch => {
 }
 
 export const getFavs = () => async (dispatch, getState) => {
-    const { usersReducer: {id} } = getState();
+    const { usersReducer: {id, token} } = getState();
     try {
-        const {data} = await api.favs(id);
+        const {data} = await api.favs(id, token);
         dispatch(setFavs(data));
     } catch(e){
         console.warn(e);
@@ -48,6 +48,7 @@ export const toggleFav = roomId => async (dispatch, getState) => {     // airbnb
     const {usersReducer: {id, token}} = getState();                     // id는 user의 id, 인자로 받는 roomId는 room의 id 의미
     try{
         const { status } = await api.toggleFavs(id, roomId, token);
+        dispatch(setFav({ roomId }));       // 좋다고 표시한 room의 id를 알아야 하기때문에 roomId를 인자로 받는다
         console.log(status);
     } catch(e) {
         console.warn(e);
