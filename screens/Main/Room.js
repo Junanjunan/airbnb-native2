@@ -116,7 +116,7 @@ export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavig
                             pitch: 0,
                             heading: 0,
                             altitude: 4000,
-                            zoom: 2
+                            zoom: 15
                         }}
                         zoomEnabled={false}
                         scrollEnabled={false}

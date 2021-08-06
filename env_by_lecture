@@ -6559,3 +6559,190 @@ export default userSlice.reducer;
             ...
 
     이제 search에도 fav한 room 확인 가능
+
+
+## MAP SCREEN
+
+# 13.0 Map Screen Setup
+
+    목표
+        1. Explore에 있는 방들을 Map에서 보여주도록 하자
+        2. Map을 이동할 때마다 검색할 수 있도록 하자
+            - room을 load하고 이동할때 마다 보여주도록 하는 방법
+            - 이동할 때마다 검색을 해서 그때그떄 load하는 방법
+            2가지 방법 다 해보자
+
+    (screens/Main/Map.js)
+        import React from "react";
+        import MapView from "react-native-maps";
+        import { connect } from "react-redux";
+        import { Dimensions, StyleSheet } from "react-native";
+        import styled from "styled-components/native";
+
+        const {width, height} = Dimensions.get("window");
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const ScrollView = styled.ScrollView`
+        position:absolute;
+        bottom: 50px;
+        `;
+
+        const RoomContainer = styled.View`
+        background-color: transparent;
+        width: ${width}px;
+        align-items: center;
+        `;
+
+        const RoomCard = styled.View`
+        background-color: white;
+        width: ${width-40}px;
+        height: 200px;
+        margin-right: 10px;
+        margin-left: 10px;
+        `;
+
+        const RoomName = styled.Text``;
+
+        const Map = ({ rooms }) => {
+            console.log(rooms);
+            return(
+                <Container>
+                    <MapView style={StyleSheet.absoluteFill} />
+                    <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        pagingEnabled
+                        >
+                        {rooms?.map(room => (
+                            <RoomContainer key={room.id}>
+                                <RoomCard>
+                                    <RoomName>{room.name}</RoomName>
+                                </RoomCard>
+                            </RoomContainer>
+                        ))}
+                    </ScrollView>
+                </Container>
+            );
+        }
+
+        function mapStateToProps(state){
+            return {rooms: state.roomsReducer.explore.rooms};
+        }
+
+        export default connect(mapStateToProps)(Map);
+
+
+# 13.1 Map View Cards
+    
+    (screens/Main/Map.js)
+        import React from "react";
+        import MapView from "react-native-maps";
+        import { connect } from "react-redux";
+        import { Dimensions, StyleSheet } from "react-native";
+        import styled from "styled-components/native";
+
+        const {width, height} = Dimensions.get("window");
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const ScrollView = styled.ScrollView`
+        position:absolute;
+        bottom: 50px;
+        `;
+
+        const RoomContainer = styled.View`
+        background-color: transparent;
+        width: ${width}px;
+        align-items: center;
+        `;
+
+        const RoomCard = styled.View`
+        background-color: white;
+        width: ${width-40}px;
+        height: 120px;
+        margin-right: 10px;
+        margin-left: 10px;
+        border-radius: 10px;
+        padding: 0px 20px;
+        flex-direction: row;
+        align-items: center;
+        `;
+
+        const RoomPhoto = styled.Image`
+        width: 80px;
+        height: 80px;
+        border-radius: 5px;
+        margin-right: 10px;
+        `;
+
+        const Column = styled.View`
+            width: 70%;
+        `;
+
+        const RoomName = styled.Text`
+        font-size: 17px;
+        `;
+
+        const RoomPrice = styled.Text`
+        margin-top: 5px;
+        font-size: 15px;
+        `;
+
+        const Map = ({ rooms }) => {
+            console.log(rooms);
+            return(
+                <Container>
+                    <MapView 
+                        style={StyleSheet.absoluteFill} 
+                        camera={{
+                            center:{
+                                latitude: parseFloat(rooms[0].lat),
+                                longitude: parseFloat(rooms[0].lng)
+                            },
+                            altitude: 700,
+                            pitch: 0,
+                            heading: 0,
+                            zoom: 1
+                        }}    
+                    />
+                    <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        pagingEnabled
+                        >
+                        {rooms?.map(room => (
+                            <RoomContainer key={room.id}>
+                                <RoomCard>
+                                    <RoomPhoto 
+                                        source={
+                                            room.photos[0]?.file 
+                                            ? {uri: room.photos[0].file} 
+                                            : require("../../assets/roomDefault.jpg")
+                                            } 
+                                    />
+                                    <Column>
+                                        <RoomName>{room.name}</RoomName>
+                                        <RoomPrice>${room.price}</RoomPrice>
+                                    </Column>
+                                </RoomCard>
+                            </RoomContainer>
+                        ))}
+                    </ScrollView>
+                </Container>
+            );
+        }
+
+        function mapStateToProps(state){
+            return {rooms: state.roomsReducer.explore.rooms};
+        }
+
+        export default connect(mapStateToProps)(Map);
