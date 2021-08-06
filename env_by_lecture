@@ -6746,3 +6746,6 @@ export default userSlice.reducer;
         }
 
         export default connect(mapStateToProps)(Map);
+
+
+# 13.2 Current Index and Markers
