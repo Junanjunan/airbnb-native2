@@ -1,10 +1,9 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { Fragment, useState } from "react";
-import { ActivityIndicator, TextInput } from "react-native";
+import React from "react";
+import { ActivityIndicator } from "react-native";
 import styled from "styled-components/native";
-import api from "../../../api";
 import colors from "../../../colors";
 import DismissKeyboard from "../../../components/DismissKeyboard";
+import RoomCard from "../../../components/RoomCard";
 
 const Container = styled.View`
 `;
@@ -68,34 +67,30 @@ font-weight: 600;
 font-size: 16px;
 `;
 
-const ResultsText = styled.Text``;
+const ResultsText = styled.Text`
+margin-top: 10px;
+font-size: 16px;
+text-align: center;
+`;
 
-export default () => {
-    const navigation = useNavigation();
-    const [searching, setSearching] = useState(false);
-    const [beds, setBeds] = useState();
-    const [bedrooms, setBedrooms] = useState();
-    const [bathrooms, setBathrooms] = useState();
-    const [maxPrice, setMaxPrice] = useState();
-    const [results, setResults] = useState();
-    const triggerSearch = async () =>{
-        //call the api
-        setSearching(true);
-        const form = {
-            ...(beds && {beds} ),     // (bedts && {beds}) beds가 true이면 {beds} object를 return 한다는 조건부 properties를 추가하는 방법이라 함. ...을 붙였으니 return된 object를 모두 풀어서 나타낸다? {beds}는 {beds:beds}를 줄인 표현인듯 
-            ...(bedrooms && {bedrooms}),     // conditional object. ES6 기능
-            ...(bathrooms && {bathrooms}),
-            ...(maxPrice && {max_price: maxPrice})  // airbnb-api를 보면 우리는 max_price라고 명명해줬기 때문
-        };
-        try {
-            const {data} = await api.search(form, "nn");    // token은 그냥 아무거나 주었음
-            setResults(data);
-        } catch(e) {
-            console.warn(e);
-        } finally {
-            setSearching(false);
-        }
-    };
+const Results = styled.ScrollView`
+margin-top: 15px;
+`;
+
+export default ({
+    navigation, 
+    beds, 
+    setBeds, 
+    bedrooms, 
+    setBedrooms, 
+    bathrooms, 
+    setBathrooms, 
+    maxPrice, 
+    setMaxPrice, 
+    searching, 
+    triggerSearch, 
+    results
+}) => {
     return (                // React.Children.only expected to receive a single React element child. 라고 뜨면 <Fragment></Fragment> 안 넣어줘서 생기는 오류라고 보면 될 듯
         <DismissKeyboard>
             <>              
@@ -149,9 +144,21 @@ export default () => {
                 {searching ? <ActivityIndicator color="white"/> : <SearchText>Search</SearchText>}
             </SearchBtn>
             {results ? <ResultsText>We found {results.count} rooms</ResultsText> : null}
+            <Results contentContainerStyle={{paddingHorizontal: 15}}>
+            {results?.results?.map(room =>
+                <RoomCard
+                key={room.id}
+                name={room.name} 
+                price={room.price}
+                photos={room.photos} 
+                id={room.id} 
+                isFav={room.is_fav}
+                isSuperHost={room.user.superhost}
+                roomObj={room}
+                />
+                )}
+            </Results>
             </>
         </DismissKeyboard>
     );
 }
-
-// 왜 난 autoFocus가 안되지.. DismissKeyboard도 안먹는다..

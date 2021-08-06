@@ -16,8 +16,6 @@ margin-bottom: 10px;
 
 const NoFavs = styled.Text``;
 
-const Test = styled.Text``;
-
 export default ({rooms}) => (
     <Container>
         <Title>Favourites ({rooms.length}) </Title>
