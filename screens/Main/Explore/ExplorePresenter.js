@@ -1,5 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+import { ActivityIndicator, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import styled from "styled-components/native";
 import RoomCard from "../../../components/RoomCard";
 
@@ -42,6 +43,7 @@ font-weight: 500;
 `;
 
 export default ({rooms, increasePage}) => {
+    const navigation = useNavigation();
     return(
         <Container>
             {rooms.length === 0 ? (
@@ -50,9 +52,13 @@ export default ({rooms, increasePage}) => {
             :
             (
                 <>
+                <TouchableWithoutFeedback 
+                    onPress={() => navigation.navigate("Search")}
+                >
                 <FakeBar>
                     <FakeText>Search..</FakeText>
                 </FakeBar>
+                </TouchableWithoutFeedback>
                 <ScrollView
                     showsVerticalScrollIndicator={false} 
                     style={{ width: "100%", marginTop:120 }} 

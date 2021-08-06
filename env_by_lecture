@@ -5504,3 +5504,723 @@ export default userSlice.reducer;
 
 
 # 11.3 Styling Room Detail part One
+
+    (navigation/Main.js)
+        import { BlurView } from "expo-blur";
+        import { StyleSheet } from "react-native";
+        ...
+        export default () => (
+            <MainNavigator.Navigator 
+                mode="modal" 
+                screenOptions={{ 
+                    headerTintColor:"rgba(50, 50, 50, 0.5)", 
+                    headerBackTitleVisible: false,
+                    headerBackImage: () => <BackBtn />
+                    }}>
+                <MainNavigator.Screen name="tabs" component={Tabs} options={{headerShown: false}} />
+                <MainNavigator.Screen 
+                    name="RoomDetail" 
+                    component={Room} 
+                    options={{
+                        headerTransparent: true,
+                        headerBackground: () =>(<BlurView
+                            intensity={10}
+                            tint="light"
+                            style={StyleSheet.absoluteFill}
+                            ></BlurView>)
+                    }} />
+            </MainNavigator.Navigator>
+
+    (components/RoomPhotos.js)
+        const PhotosContainer = styled.View`
+        margin-bottom: 10px;
+        overflow: hidden;
+        background-color: red;
+        width: 100%;
+        height: ${props => `${height/props.factor}`}px;
+        `;
+        ...
+        const RoomPhotos = ({ photos, factor=4 }) => (
+            <PhotosContainer factor={factor}>
+                {photos.length === 0 ? 
+                <SlideImage resizeMode="repeat" source={require("../assets/roomDefault.jpg")} />
+        ...
+                
+    (screens/Main/Room.js)
+        import React, { useEffect } from "react";
+        import styled from "styled-components/native";
+        import RoomPhotos from "../../components/RoomPhotos";
+
+        const Container = styled.View`
+        `;
+
+        const Text = styled.Text``;
+
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <RoomPhotos photos={params.photos} factor={3}/>
+                </Container>
+            );
+        }
+
+    (colors.js)
+        export default {
+            red: "#FF5A5F",
+            black: "rgb(35, 35, 35)",
+            green: "#006a70"
+        }
+
+    (screens/Main/Room.js)
+        import React, { useEffect } from "react";
+        import styled from "styled-components/native";
+        import RoomPhotos from "../../components/RoomPhotos";
+        import colors from "../../colors";
+
+        const Container = styled.View``;
+
+        const DataContainer = styled.View`
+        padding: 0px 20px;
+        `;
+
+        const Address = styled.Text`
+        margin-top: 10px;
+        font-size: 24px;
+        `;
+
+        const PropertyInfoContainer = styled.View`
+        margin-top: 20px;
+        flex-direction: row;
+        `;
+
+        const PropertyInfoData = styled.View`
+        background-color: ${colors.green};
+        margin-right: 10px;
+        border-radius: 5px;
+        `;
+
+        const PropertyInfoText = styled.Text`
+        color: white;
+        font-weight: 500;
+        padding: 5px 10px;
+        `;
+
+        function formatQtt(number, name) {
+            if (number <= 1) {
+                return `${number} ${name}`;
+            } else {
+                return `${number} ${name}s`;
+            }
+        }
+
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <RoomPhotos photos={params.photos} factor={2} />
+                    <DataContainer>
+                        <Address>{params.address}</Address>
+                        <PropertyInfoContainer>
+                        <PropertyInfoData>
+                            <PropertyInfoText>{formatQtt(params.beds, "bed")}</PropertyInfoText>
+                        </PropertyInfoData>
+                        <PropertyInfoData>
+                            <PropertyInfoText>
+                            {formatQtt(params.bedrooms, "bedroom")}
+                            </PropertyInfoText>
+                        </PropertyInfoData>
+                        <PropertyInfoData>
+                            <PropertyInfoText>
+                            {formatQtt(params.bathrooms, "bathroom")}
+                            </PropertyInfoText>
+                        </PropertyInfoData>
+                        </PropertyInfoContainer>
+                    </DataContainer>
+                </Container>
+            );
+        }
+
+
+# 11.4 Styling Room Detail part Two
+    (screens/Main/Room.js)
+        import React, { useEffect } from "react";
+        import styled from "styled-components/native";
+        import { Ionicons } from "@expo/vector-icons";
+        import RoomPhotos from "../../components/RoomPhotos";
+        import colors from "../../colors";
+        import utils from "../../utils";
+
+        const Container = styled.View``;
+
+        const DataContainer = styled.View`
+        padding: 0px 20px;
+        `;
+
+        const Address = styled.Text`
+        margin-top: 10px;
+        font-size: 24px;
+        `;
+
+        const PropertyInfoContainer = styled.View`
+        margin-top: 20px;
+        flex-direction: row;
+        `;
+
+        const PropertyInfoData = styled.View`
+        background-color: ${colors.green};
+        margin-right: 10px;
+        border-radius: 5px;
+        `;
+
+        const PropertyInfoText = styled.Text`
+        color: white;
+        font-weight: 500;
+        padding: 5px 10px;
+        `;
+
+        const CheckContainer = styled.View`
+        margin-top: 40px;
+        `;
+
+        const CheckTitleContainer = styled.View`
+        flex-direction: row;
+        align-items: center;
+        `;
+
+        const CheckTitle = styled.Text`
+        font-size: 18px;
+        margin-left: 15px;
+        `;
+
+        const CheckTime = styled.Text`
+        margin-top: 10px;
+        `;
+
+        function formatQtt(number, name) {
+            if (number <= 1) {
+                return `${number} ${name}`;
+            } else {
+                return `${number} ${name}s`;
+            }
+        }
+
+        function formatTime(time) {
+            const [hours, min, sec] = time.split(":");          // split: string을 원하는 글자를 기준으로 나눠서 Array로 저장. (string만 가능한가?는 확인 필요)
+            return `${hours} o'clock.`;
+        }
+
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <RoomPhotos photos={params.photos} factor={2} />
+                    <DataContainer>
+                        <Address>{params.address}</Address>
+                        <PropertyInfoContainer>
+                        <PropertyInfoData>
+                            <PropertyInfoText>{formatQtt(params.beds, "bed")}</PropertyInfoText>
+                        </PropertyInfoData>
+                        <PropertyInfoData>
+                            <PropertyInfoText>
+                            {formatQtt(params.bedrooms, "bedroom")}
+                            </PropertyInfoText>
+                        </PropertyInfoData>
+                        <PropertyInfoData>
+                            <PropertyInfoText>
+                            {formatQtt(params.bathrooms, "bathroom")}
+                            </PropertyInfoText>
+                        </PropertyInfoData>
+                        </PropertyInfoContainer>
+                        <CheckContainer>
+                    <CheckTitleContainer>
+                        <Ionicons
+                        name={utils.isAndroid() ? "md-timer" : "ios-timer"}
+                        size={24}
+                        />
+                        <CheckTitle>Check-in / Check-out</CheckTitle>
+                    </CheckTitleContainer>
+                    <CheckTime>
+                        {formatTime(params.check_in)} / {formatTime(params.check_out)}
+                    </CheckTime>
+                    </CheckContainer>
+                    </DataContainer>
+                </Container>
+            );
+        }
+
+
+# 11.5 MapView on Room Detail
+
+    지도작업을 하기 위해서 MapView component를 사용할 것임
+
+    $ expo install react-native-maps
+
+    자세한 사항은 https://github.com/react-native-maps/react-native-maps 참조 /
+
+    (screens/Main/Room.js)
+        import MapView, {Marker} from "react-native-maps";
+        
+        ...
+        const MapContainer = styled.View`
+        height: 300px;
+        margin-top: 20px;
+        `;
+
+        
+        export default ({ route: { params }, navigation}) => {   // Room.js를 MainNavigator 안에 있는 screen으로 해줬기 때문에 route prop을 그냥 가져올 수 있다.
+            useEffect(() => {
+                navigation.setOptions({ title: params.name });
+            }, []);
+            return (
+                <Container>
+                    <RoomPhotos photos={params.photos} factor={2} />
+                    <DataContainer>
+                        <CheckContainer>
+                        ...
+                        </CheckContainer>
+                        <MapContainer>
+                        <MapView
+                            camera={{
+                                center:{
+                                    latitude: parseFloat(params.lat),
+                                    longitude: parseFloat(params.lng),
+                                },
+                                pitch: 0,
+                                heading: 0,
+                                altitude: 4000,
+                                zoom: 2
+                            }}
+                            zoomEnabled={false}
+                            scrollEnabled={false}
+                            style={{ height: "100%", width: "100%" }}
+                        >
+                            <Marker coordinate={{latitude:parseFloat(params.lat), longitude:parseFloat(params.lng)}} />
+                        </MapView>
+                    </MapContainer>
+                    </DataContainer>
+                ...
+
+    * 좌표 설정 제대로 해서 지도에 뜨는 것 확인해보자
+
+
+## 12.0 Search Screen part One
+    
+    (screens/Main/Search/SearchPresenter.js)
+        import React from "react";
+        import styled from "styled-components/native";
+
+        const Container = styled.View`
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const Text = styled.Text``;
+
+        export default () => (
+            <Container>
+                <Text>Search</Text>
+            </Container>
+        );
+
+    (screens/Main/Search/SearchContainer.js)
+        import React from "react";
+        import SearchPresenter from "./SearchPresenter";
+
+
+        export default () => <SearchPresenter />;
+
+    (screens/Main/Search/index.js)
+        import SearchContainer from "./SearchContainer";
+
+        export default SearchContainer;
+
+    이제 Navigation에 Search를 포함하도록 하자
+
+    (navigation/Main.js)
+        export default () => (
+            ...
+                <MainNavigator.Screen
+                name="Search"
+                component={Search}
+                />
+            </MainNavigator.Navigator>
+        );
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        ...
+        <TouchableWithoutFeedback>
+        <FakeBar>
+            <FakeText>Search..</FakeText>
+        </FakeBar>
+        </TouchableWithoutFeedback>
+        ...
+
+    (screens/Main/Explore/ExplorePresenter.js)
+        import { useNavigation } from "@react-navigation/native";
+        import { ActivityIndicator, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+
+        export default ({rooms, increasePage}) => {
+            const navigation = useNavigation();
+            return(
+                <Container>
+                        ...
+                        <TouchableWithoutFeedback 
+                            onPress={() => navigation.navigate("Search")}
+                        >
+                        <FakeBar>
+                            <FakeText>Search..</FakeText>
+                        </FakeBar>
+                        </TouchableWithoutFeedback>
+                        ...
+    
+    (screens/Main/Search/SearchPresenter.js)
+        import { useNavigation } from "@react-navigation/native";
+        import React from "react";
+        import styled from "styled-components/native";
+        import DismissKeyboard from "../../../components/DismissKeyboard";
+
+        const Container = styled.View`
+        `;
+
+        const SearchContainer = styled.View`
+        margin-top: 50px;
+        flex-direction: row;
+        padding: 10px 20px;
+        justify-content: space-between;
+        align-items: center;
+        `;
+
+        const CancelContainer = styled.TouchableOpacity``;
+
+        const CancelText = styled.Text``;
+
+        const SearchBar = styled.TextInput`
+        height: 40px;
+        width: 85%;
+        border-radius: 7px;
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        `;
+
+        const Text = styled.Text``;
+
+        export default () => {
+            const navigation = useNavigation();
+            return (
+                <DismissKeyboard>
+                    <Container>
+                        <SearchContainer>
+                            <SearchBar />
+                            <CancelContainer onPress={() => navigation.goBack()}>
+                                <CancelText>Cancel</CancelText>
+                            </CancelContainer>
+                        </SearchContainer>
+                    </Container>
+                </DismissKeyboard>
+            );
+        }
+
+        // 왜 난 autoFocus가 안되지.. DismissKeyboard도 안먹는다..
+
+
+# 12.1 Search Screen part Two
+    
+    (screens/Main/Search/SearchPresenter.js)
+        import { useNavigation } from "@react-navigation/native";
+        import React from "react";
+        import { TextInput } from "react-native";
+
+        import styled from "styled-components/native";
+        import DismissKeyboard from "../../../components/DismissKeyboard";
+
+        const Container = styled.View`
+        `;
+
+        const SearchContainer = styled.View`
+        margin-top: 50px;
+        flex-direction: row;
+        padding: 10px 20px;
+        justify-content: space-between;
+        align-items: center;
+        `;
+
+        const CancelContainer = styled.TouchableOpacity``;
+
+        const CancelText = styled.Text``;
+
+        const SearchBar = styled.TextInput`
+        height: 40px;
+        width: 85%;
+        border-radius: 7px;
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        `;
+
+        const FiltersContainer = styled.ScrollView`
+        flex-direction: row;
+        margin-top: 10px;
+        `;
+
+        const FilterContainer = styled.View`
+        align-items: center;
+        margin-right: 15px;
+        `;
+
+        const FilterLabel = styled.Text`
+        text-transform: uppercase;
+        font-size: 12px;
+        margin-bottom: 5px;
+        font-weight: 500;
+        `;
+
+        const Filter = styled.TextInput`
+        padding: 10px;
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 1px 2.5px 2.5px rgba(200, 200, 200, 0.5);
+        width: 80px;
+        `;;
+
+        export default () => {
+            const navigation = useNavigation();
+            return (
+                <DismissKeyboard>
+                    <Container>
+                        <SearchContainer>
+                            <SearchBar autoFocus={true} placeholder="Search by city..." />
+                            <CancelContainer onPress={() => navigation.goBack()}>
+                                <CancelText>Cancel</CancelText>
+                            </CancelContainer>
+                        </SearchContainer>
+                        <FiltersContainer
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                >
+                    <FilterContainer>
+                        <FilterLabel>Beds</FilterLabel>
+                        <Filter placeholder="0" keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Bedrooms</FilterLabel>
+                        <Filter placeholder="0" keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Bathrooms</FilterLabel>
+                        <Filter placeholder="0" keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Max. price</FilterLabel>
+                        <Filter placeholder="$0" keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    </FiltersContainer>
+                    </Container>
+                </DismissKeyboard>
+            );
+        }
+
+        // 왜 난 autoFocus가 안되지.. DismissKeyboard도 안먹는다..
+
+
+# 12.2 Search Logic part One
+
+    (screens/Main/Search/SearchPresenter.js)
+        import React, { Fragment, useState } from "react";
+        import colors from "../../../colors";
+        ...
+        const SearchBtn = styled.TouchableOpacity`
+        background-color: ${colors.red};
+        padding: 10px;
+        margin: 10px 30px;
+        border-radius: 10px;
+        align-items: center;
+        `;
+
+        const SearchText = styled.Text`
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        `;
+
+        export default () => {
+            const navigation = useNavigation();
+            const [beds, setBeds] = useState();
+            const [bedrooms, setBedrooms] = useState();
+            const [bathrooms, setBathrooms] = useState();
+            const [maxPrice, setMaxPrice] = useState();
+            const submit = () =>{
+                //call the api
+                const form = {
+                    ...(beds && {beds} ),     // (bedts && {beds}) beds가 true이면 {beds} object를 return 한다는 조건부 properties를 추가하는 방법이라 함. ...을 붙였으니 return된 object를 모두 풀어서 나타낸다? {beds}는 {beds:beds}를 줄인 표현인듯 
+                    ...(bedrooms && {bedrooms}),     // conditional object. ES6 기능
+                    ...(bathrooms && {bathrooms}),
+                    ...(maxPrice && {max_price: maxPrice})  // airbnb-api를 보면 우리는 max_price라고 명명해줬기 때문
+                };
+                console.log(form);          // 아래서 submit 실행할 때, 값이 있을때만 출력 되는 것 확인
+            };
+            return (                // React.Children.only expected to receive a single React element child. 라고 뜨면 <Fragment></Fragment> 안 넣어줘서 생기는 오류라고 보면 될 듯
+                <DismissKeyboard>
+                    <>              
+                    <Container>
+                        <SearchContainer>
+                            <SearchBar autoFocus={true} placeholder="Search by city..." />
+                            <CancelContainer onPress={() => navigation.goBack()}>
+                                <CancelText>Cancel</CancelText>
+                            </CancelContainer>
+                        </SearchContainer>
+                        <FiltersContainer
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}
+                >
+                    <FilterContainer>
+                        <FilterLabel>Beds</FilterLabel>
+                        <Filter
+                            onChangeText={text => setBeds(text)} 
+                            value={beds} 
+                            placeholder="0" 
+                            keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Bedrooms</FilterLabel>
+                        <Filter
+                            onChangeText={text => setBedrooms(text)} 
+                            value={bedrooms} 
+                            placeholder="0" 
+                            keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Bathrooms</FilterLabel>
+                        <Filter
+                            onChangeText={text => setBathrooms(text)} 
+                            value={bathrooms} 
+                            placeholder="0" 
+                            keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    <FilterContainer>
+                        <FilterLabel>Max. price</FilterLabel>
+                        <Filter 
+                            onChangeText={text => setMaxPrice(text)}
+                            value={maxPrice} 
+                            placeholder="$0" 
+                            keyboardType={"number-pad"} />
+                    </FilterContainer>
+                    </FiltersContainer>
+                    </Container>
+                    <SearchBtn onPress={submit}>
+                        <SearchText>Search</SearchText>
+                    </SearchBtn>
+                    </>
+                </DismissKeyboard>
+            );
+        }
+
+
+# 12.3 Search Logic part Two
+
+    (api.js)
+        import axios from "axios";
+
+        const callApi = async (method, path, data, jwt, params) => {
+            ...
+            if(method === "get" || method === "delete"){
+                return axios[method](fullUrl, {headers, params});       // params는 url 뒤에 붙어서 ?beds=1&bedrooms=5 이런식으로 붙을 예정
+            ...
+
+        export default {
+            ...
+            search: (form, token) => callApi("get", "/rooms/search/", null, null, form)
+        };
+
+    (screens/Main/Search/SearchPresenter.js)에서 아래와 같이 만든 form을 api의 params 자리에 넣을 것임
+        const form = {
+                    ...(beds && {beds} ),     // (bedts && {beds}) beds가 true이면 {beds} object를 return 한다는 조건부 properties를 추가하는 방법이라 함. ...을 붙였으니 return된 object를 모두 풀어서 나타낸다? {beds}는 {beds:beds}를 줄인 표현인듯 
+                    ...(bedrooms && {bedrooms}),     // conditional object. ES6 기능
+                    ...(bathrooms && {bathrooms}),
+                    ...(maxPrice && {max_price: maxPrice})  // airbnb-api를 보면 우리는 max_price라고 명명해줬기 때문
+                };
+
+    (screens/Main/Search/SearchPresenter.js)
+        ...
+        const submit = async () =>{
+                //call the api
+                const form = {
+                    ...(beds && {beds} ),     // (bedts && {beds}) beds가 true이면 {beds} object를 return 한다는 조건부 properties를 추가하는 방법이라 함. ...을 붙였으니 return된 object를 모두 풀어서 나타낸다? {beds}는 {beds:beds}를 줄인 표현인듯 
+                    ...(bedrooms && {bedrooms}),     // conditional object. ES6 기능
+                    ...(bathrooms && {bathrooms}),
+                    ...(maxPrice && {max_price: maxPrice})  // airbnb-api를 보면 우리는 max_price라고 명명해줬기 때문
+                };
+                try {
+                    const {data} = await api.search(form, "nn");    // token은 그냥 아무거나 주었음
+                    console.log("----------");
+                    console.log(data);
+                } catch(e) {
+                    console.warn(e);
+                }
+            };
+        ...
+    
+    위와 같이 하고 Search를 해보면
+    
+    airbnb-api의 pipenv terminal에서 다음과 같이 log가 나온다.
+    "GET /api/v1/rooms/search/?beds=1&bedrooms=1&bathrooms=1 HTTP/1.1" 200 17763
+    즉, /api/v1/rooms/search/에 우리가 입력한 form이 ?beds=1&bedrooms=1&bathrooms=1 와 같이 붙어서 api를 호출하는 것을 확인
+    
+    airbnb-native2의 log를 보면
+    해당하는 조건에 맞는 방들의 object가 출력
+
+    (screens/Main/Search/SearchPresenter.js)
+        import React, { Fragment, useState } from "react";
+        import { ActivityIndicator, TextInput } from "react-native";
+        import api from "../../../api";
+        
+        
+        const ResultsText = styled.Text``;
+
+        export default () => {
+            const navigation = useNavigation();
+            const [searching, setSearching] = useState(false);
+            const [beds, setBeds] = useState();
+            const [bedrooms, setBedrooms] = useState();
+            const [bathrooms, setBathrooms] = useState();
+            const [maxPrice, setMaxPrice] = useState();
+            const [results, setResults] = useState();
+            const triggerSearch = async () =>{
+                //call the api
+                setSearching(true);
+                const form = {
+                    ...(beds && {beds} ),     // (bedts && {beds}) beds가 true이면 {beds} object를 return 한다는 조건부 properties를 추가하는 방법이라 함. ...을 붙였으니 return된 object를 모두 풀어서 나타낸다? {beds}는 {beds:beds}를 줄인 표현인듯 
+                    ...(bedrooms && {bedrooms}),     // conditional object. ES6 기능
+                    ...(bathrooms && {bathrooms}),
+                    ...(maxPrice && {max_price: maxPrice})  // airbnb-api를 보면 우리는 max_price라고 명명해줬기 때문
+                };
+                try {
+                    const {data} = await api.search(form, "nn");    // token은 그냥 아무거나 주었음
+                    setResults(data);
+                } catch(e) {
+                    console.warn(e);
+                } finally {
+                    setSearching(false);
+                }
+            };
+            return (                // React.Children.only expected to receive a single React element child. 라고 뜨면 <Fragment></Fragment> 안 넣어줘서 생기는 오류라고 보면 될 듯
+                <DismissKeyboard>
+                    <>              
+                    <Container>
+                     ...
+                    <SearchBtn onPress={searching ? null: triggerSearch}>
+                        {searching ? <ActivityIndicator color="white"/> : <SearchText>Search</SearchText>}
+                    </SearchBtn>
+                    {results ? <ResultsText>We found {results.count} rooms</ResultsText> : null}
+                    </>
+                </DismissKeyboard>
+            );
+        }

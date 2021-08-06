@@ -2,14 +2,19 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { StyleSheet } from "react-native";
 import Explore from "../screens/Main/Explore";
 import MapScreen from "../screens/Main/Map";
 import Saved from "../screens/Main/Saved";
 import Profile from "../screens/Main/Profile";
+import Room from "../screens/Main/Room";
+import Search from "../screens/Main/Search"
 import colors from "../colors";
 import utils from "../utils";
-import Room from "../screens/Main/Room";
+
 import BackBtn from "../components/Auth/BackBtn";
+
 
 
 const TabsNavigator = createBottomTabNavigator();
@@ -53,9 +58,22 @@ export default () => (
             headerBackTitleVisible: false,
             headerBackImage: () => <BackBtn />
             }}>
-    {/* <MainNavigator.Navigator> */}
         <MainNavigator.Screen name="tabs" component={Tabs} options={{headerShown: false}} />
-        <MainNavigator.Screen name="RoomDetail" component={Room} />
+        <MainNavigator.Screen 
+            name="RoomDetail" 
+            component={Room} 
+            options={{
+                headerTransparent: true,
+                headerBackground: () =>(<BlurView
+                    intensity={10}
+                    tint="light"
+                    style={StyleSheet.absoluteFill}
+                    ></BlurView>)
+            }} />
+        <MainNavigator.Screen
+            name="Search"
+            component={Search}
+            options={{headerShown:false}}
+        />
     </MainNavigator.Navigator>
-    
 );
