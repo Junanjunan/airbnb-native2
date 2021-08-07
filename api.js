@@ -6,7 +6,7 @@ const callApi = async (method, path, data, jwt, params) => {
         "Content-Type": "application/json"
     };
     // togleFavs를 하기 위해서, Authorization: jwt를  `Bearer ${jwt}`로 바꿔줘야 함. airbnb-api에서 authentication.py를 보면 token을 x-token asdsasss 이런식으로 x-token뒤에 token을 보내는 것을 확인 가능
-    const baseUrl = "http://bc8ab0d4f62f.ngrok.io/api/v1";
+    const baseUrl = "http://c3946bc4dd72.ngrok.io/api/v1";
     const fullUrl = `${baseUrl}${path}`;
     if(method === "get" || method === "delete"){
         return axios[method](fullUrl, {headers, params});
