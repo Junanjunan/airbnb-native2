@@ -21,15 +21,26 @@
     c as e라고하면, 변수 c의 값을 변수 e로 넘겨주는 겁니다. 
     출처: https://codingmania.tistory.com/333 [개발자의 개발 블로그]
 
+
+# 6.0 Requirements
+    Node.js 설치 - LTS 버전으로 (안정적임)
+    $ npm 으로 설치 확인
+
+    Expo 설치(모바일에)
+
+    작업시 컴퓨터로 모바일 화면 확인 - Android Studio(window) , Xcode(mac)
+
+
+
 # 6.1 Setup
     github에 새 repository 필요 /airbnb-native-re
 
     expo-cli 설치: $ npm i -g expo-cli (또는 yarn global add expo-cli)
         확인: $ expo
-        실행: $ expo init (할 이름) - $ expo init airbnb-native
+        실행: $ expo init (할 이름) - $ expo init airbnb-native2
             선택사항은 그냥 blank로
                 -> 프로젝트 생성(폴더 및 파일이 생성된다.)
-        경로변경: cd airbnb-native
+        경로변경: cd airbnb-native2
 
     github 저장:
         git remote add origin https://github.com/Junanjunan/airbnb-native2
@@ -45,10 +56,17 @@
     ** git add filename 으로는 되는데, git add . 이 안됨... 왜이러지...
         git push origin master는 안되고 git push -u origin main 은 되는 상황
 
+    ** 위의 과정을 해주었더니
+        Branch 'main' set up to track remote branch 'main' from 'origin' 이라 나옴
+
+    ** fatal: The current branch master has no upstream branch.
+       To push the current branch and set the remote as upstream, use
+        $ git push --set-upstream origin master
+
     다음 설명은 airbnb-native 폴더에..?
 
     설치, 셋팅 완료 후 앱실행
-        (airbnb-native)
+        (airbnb-native2)
             $ npm start
 
         로그인 안되어있으면 해야한다. (LOGGED IN AS ~ 라고 떠야 함) 로그인해야 핸드폰에서 application 확인 가능
